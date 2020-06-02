@@ -16,9 +16,9 @@ SEQ_LEN = 12             # 序列长度
 
 class Config:
     def __init__(self):
-        self.model_type = 'nn'      # 语义编码网名类型: ['nn', 'cnn', 'rnn', 'atten']
+        self.model_type = 'atten'      # 语义编码网名类型: ['nn', 'cnn', 'rnn', 'atten']
         self.batch_size = 512
-        self.eval_every_num_update = 1
+        self.eval_every_num_update = 10
         self.num_steps = 10 # estimator 迭代次数
         self.num_epochs = 1  # 总迭代轮次
         self.train_valid_ratio = 0.9    # 训练集和测试集的比例
@@ -44,7 +44,7 @@ flags.DEFINE_integer("batch_size", default=512, help="batch size of every train 
 flags.DEFINE_integer("train_batch_size", default=512, help="batch size of every train step")
 flags.DEFINE_float("learning_rate", default=1e-3, help="Maximum learning rate.")
 flags.DEFINE_integer("train_steps", default=1000000, help="Total number of training steps.")
-flags.DEFINE_integer("save_steps", default=1000, help="Save the model for every save_steps. If None, not to save any model.")
+flags.DEFINE_integer("save_steps", default=100, help="Save the model for every save_steps. If None, not to save any model.")
 flags.DEFINE_integer("warmup_steps", default=1000, help="Number of steps for linear lr warmup.")
 flags.DEFINE_float("clip", default=1.0, help="Gradient clipping value.")
 flags.DEFINE_string("original_file", "data/jddata_1000", help="original file ex: jd or resume file")

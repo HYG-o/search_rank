@@ -34,6 +34,13 @@ class Encoder:
         self.sim_ab = cal_sim(self.emb_a, self.emb_b)
         return self.emb_a, self.emb_b
 
+def get_score(feature, is_training):
+    # get semantic vector of input
+    embedding, debug_info = create_embed_encoder(feature, is_training)
+    # get score
+    score = tf.layers.dense(embedding, 1)   ; debug_info['embedding']=embedding;debug_info['score']=score
+    return score, debug_info
+
 def create_embed_encoder(x_in, is_training, is_normal=True):
     if is_normal:
         embedding, debug_info = encode_net(x_in, is_training)               # 以序列为单位进行编码：[batch_size, seq_len]

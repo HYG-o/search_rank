@@ -1,4 +1,6 @@
 import math
+from tqdm import tqdm
+import numpy as np
 
 def gen_test_train_data():
     def gen_data(old_file, new_file):
@@ -9,6 +11,27 @@ def gen_test_train_data():
     gen_data("MQ2008/Fold1/train.txt", "tmp/train.txt")
     gen_data("MQ2008/Fold1/test.txt", "tmp/test.txt")
     gen_data("MQ2008/Fold1/valid.txt", "tmp/valid.txt")
+
+def load_data(file_name):
+    print('load file: %s' % (file_name))
+    feature, label, qid = [], [], []
+    text = [line.strip().split() for line in open(file_name).readlines()]
+    for line in tqdm(text, total=len(text)):
+        feature.append([int(e.split(":")[1]) for e in line[2:]])
+        label.append(int(line[0]))
+        qid.append(int(line[1].split(":")[1]))
+    res = {'feature': np.array(feature), 'label': np.array(label), 'qid': np.array(qid)}
+    return res
+
+def get_batch_index(seq, step):
+    n = len(seq)
+    res = []
+    for i in range(0, n, step):
+        res.append(seq[i: i + step])
+    # last batch
+    if len(res) * step < n:
+        res.append(seq[len(res) * step:])
+    return res
 
 def cal_ndcg(label_list, topk=10):
     label_list = [int(e) for e in label_list]
@@ -33,4 +56,7 @@ def calndcg(scores, labels):
     return ndcg
 
 if __name__ == "__main__":
-    gen_test_train_data()
+    labels = [1, 0]
+    #gen_test_train_data()
+    a=cal_ndcg(labels, len(labels))
+    pass

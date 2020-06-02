@@ -107,6 +107,9 @@ class xgbLtr:
             a=1
         pass
 
+    def predict(self):
+        pass
+
 
 if __name__ == "__main__":
     xgb_ltr = xgbLtr()  ; #xgb_ltr.plotXgboostTree()

@@ -1,8 +1,11 @@
 from config import SEQ_LEN, FLAGS
 import tensorflow as tf
-from embedding import create_embed_encoder
+from embedding import get_score
 from data_utils import gen_train_samples, gen_train_input_fn
 import model_utils
+from utils import load_data, calndcg
+import numpy as np
+from tqdm import tqdm
 
 # Define the model function (following TF Estimator Template)
 def model_fn(features, labels, mode, params):
@@ -10,10 +13,8 @@ def model_fn(features, labels, mode, params):
     # Because Dropout have different behavior at training and prediction time, we
     # need to create 2 distinct computation graphs that still share the same weights.
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
-    # get semantic vector of input
-    embedding, _ = create_embed_encoder(features['feature'], is_training=is_training)
-    # get score
-    score = tf.layers.dense(embedding, 1)
+    # get score of input
+    score, _ = get_score(features['feature'], is_training)      # 神经网络设计模块
     # TF Estimators requires to return a EstimatorSpec, that specify
     # the different ops for training, evaluating, predicting...
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -70,6 +71,35 @@ def run():
     serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn(feature_spec)
     model.export_savedmodel(FLAGS.serving_model_dir, serving_input_receiver_fn)
 
+class seachRank:
+    def __init__(self, ckpt_num=0):
+        tf.logging.set_verbosity(tf.logging.INFO)
+        self.ckpt_path = FLAGS.model_dir + "/model.ckpt-" + str(ckpt_num)
+        self.sess = tf.Session()
+        self.feature = tf.placeholder(tf.int32, [None, SEQ_LEN], name='input_seq_feature')  # [batch_size, SEQ_LEN]
+        # get score of input
+        self.score, _ = get_score(self.feature, False)  # 神经网络设计模块
+        tf.train.Saver().restore(self.sess, self.ckpt_path)
+
+    def test(self, test_file="tensorflow_rank_data/valid.txt"):
+        X = load_data(test_file)
+        print('evaluate model...')
+        qid_unique = np.unique(X["qid"])
+        n = len(qid_unique)
+        ndcgs = np.zeros(n)
+        # 计算每一个组的 ndcg 值
+        for e, qid in enumerate(tqdm(qid_unique, total=len(qid_unique))):
+            ind = np.where(X["qid"] == qid)[0]
+            feed_dict = {self.feature: X["feature"][ind]}
+            # fetch = self.sess.run(self.debug_info, feed_dict=feed_dict)
+            fetch = self.sess.run({'score': self.score}, feed_dict=feed_dict)
+            score = fetch['score'].flatten()
+            ndcgs[e] = calndcg(score, X["label"][ind].flatten())
+        ndcgs_mean = np.mean(ndcgs)
+        print('test file: %s\tndcg mean: %.3f' % (test_file, ndcgs_mean))
+        return ndcgs_mean
+
 if __name__ == "__main__":
-    run()
+    #run()
+    sr = seachRank(); sr.test()
     pass

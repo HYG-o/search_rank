@@ -1,33 +1,21 @@
 import time
 import numpy as np
-from embedding import Encoder
+from embedding import Encoder, get_score
 from tqdm import tqdm
 import tensorflow as tf
 from config import SEQ_LEN, conf, FLAGS
 import pandas as pd
 from metrics import ndcg, calc_err
-from utils import cal_ndcg, calndcg
+from utils import cal_ndcg, calndcg, load_data, get_batch_index
 import model_utils
-
-def load_data(file_name):
-    print('load file: %s' % (file_name))
-    feature, label, qid = [], [], []
-    text = [line.strip().split() for line in open(file_name).readlines()]
-    for line in tqdm(text, total=len(text)):
-        feature.append([int(e.split(":")[1]) for e in line[2:]])
-        label.append(int(line[0]))
-        qid.append(int(line[1].split(":")[1]))
-    res = {'feature': np.array(feature), 'label': np.array(label), 'qid': np.array(qid)}
-    return res
 
 class nn_ltr:
     def __init__(self, model_type='atten'):
         self.debug_info = {}
-        self.train_file = "tensorflow_rank_data/train.txt"
-        self.test_file = "tensorflow_rank_data/test.txt"
-        self.valid_file = "tensorflow_rank_data/valid.txt"
+        self.train_file = "tensorflow_rank_data/train1.txt"
+        self.test_file = "tensorflow_rank_data/test1.txt"
+        self.valid_file = "tensorflow_rank_data/valid1.txt"
         self.model_dir = "nn_model"
-        self.encoder = Encoder(model_type)
         self.feature = tf.placeholder(tf.int32, [None, SEQ_LEN], name='input_seq_feature')  # [batch_size, SEQ_LEN]
         self.is_training = tf.placeholder_with_default(True, shape=())
         self.label = tf.placeholder(tf.float32, shape=[None, 1], name="label")
@@ -51,9 +39,7 @@ class nn_ltr:
         self.X_valid = load_data(self.valid_file)
 
     def score_fn(self):
-        self.embedding = self.encoder.create_tf_embed_new(self.feature, self.is_training)       ; self.debug_info['encoder_debug_info']=self.encoder.debug_info
-        # get score
-        score = tf.layers.dense(self.embedding, 1)  ; self.debug_info['embedding']=self.embedding;self.debug_info['score']=score
+        score, debug_info = get_score(self.feature, self.is_training)   ; self.debug_info['encoder_debug_info']=debug_info
 
         # calculate pairwise loss
         S_ij = self.label - tf.transpose(self.label)    ; self.debug_info['label']=self.label
@@ -61,8 +47,6 @@ class nn_ltr:
         P_ij = (1 / 2) * (1 + S_ij)
         s_i_minus_s_j = score - tf.transpose(score); self.debug_info['s_i_minus_s_j']=s_i_minus_s_j; self.debug_info['P_ij']=P_ij
 
-        sigma = 1.0
-        lambda_ij = sigma * ((1 / 2) * (1 - S_ij) - tf.nn.sigmoid(-sigma * s_i_minus_s_j))
         logloss = tf.nn.sigmoid_cross_entropy_with_logits(logits=s_i_minus_s_j, labels=P_ij)    ; self.debug_info['logloss']=logloss
 
         # only extracted the loss of pairs of the same group
@@ -84,16 +68,6 @@ class nn_ltr:
 
         self.loss, self.num_pairs, self.score, self.train_op = loss, num_pairs, score, train_op
 
-    def _get_batch_index(self, seq, step):
-        n = len(seq)
-        res = []
-        for i in range(0, n, step):
-            res.append(seq[i:i + step])
-        # last batch
-        if len(res) * step < n:
-            res.append(seq[len(res) * step:])
-        return res
-
     def train(self):
         start_time = time.time()
         print('Training and evaluating...')
@@ -106,10 +80,10 @@ class nn_ltr:
         # evaluate before training
         #loss_mean_valid, err_mean_valid, ndcg_mean_valid, ndcg_all_mean_valid = self.evaluate(self.X_valid)
         # training model...
-        for epoch in range(20):
+        for epoch in range(2):
             np.random.seed(epoch)
             np.random.shuffle(train_idx_shuffle)
-            batches = self._get_batch_index(train_idx_shuffle, conf.batch_size)
+            batches = get_batch_index(train_idx_shuffle, conf.batch_size)
             for i, idx in enumerate(batches):
                 ind = idx
                 feed_dict = self._get_feed_dict(self.X_train, ind, training=True)
@@ -167,10 +141,16 @@ class nn_ltr:
         errs_mean = np.mean(errs)
         return losses_mean, errs_mean, ndcgs_mean, ndcgs_all_mean
 
+    def test(self, ckpt_num=0):
+        ckpt_path = self.model_dir + "/model.checkpoint"
+        #ckpt_path = FLAGS.model_dir + "/model.ckpt-" + str(ckpt_num)
+        self.saver.restore(self.sess, ckpt_path)
+        pass
+
 if __name__ == "__main__":
     # 设置日志的打印级别：把日志设置为INFO级别
     tf.logging.set_verbosity(tf.logging.INFO)
-    nr = nn_ltr()
+    nr = nn_ltr()   ;   #nr.test()
     nr.get_train_data()
     nr.score_fn()
     nr.train()
