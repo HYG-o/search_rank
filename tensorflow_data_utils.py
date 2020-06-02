@@ -53,11 +53,6 @@ def score_search_data(file_path="data/zn_search_data.txt"):
     with open("data/search_data_score.txt", "w", encoding="utf8") as fin:
         fin.write("\n".join(sample_group))
 
-def encode(_key, _dict):
-    res_en = [0] * (len(_dict) + 1)
-    res_en[_dict.get(_key, 0)] = 1
-    return res_en
-
 def encode_kw(query, query_dict):
     kw_en = [query_dict.get('unk')] * 5
     query_seg = query.split()
