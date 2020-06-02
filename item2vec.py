@@ -1,6 +1,6 @@
 from gensim.models.word2vec import Word2Vec, LineSentence
-import multiprocessing
-import os
+import multiprocessing, os
+import tensorflow as tf
 import numpy as np
 
 def item2vec(train_file_path, save_path, dim_size=48, min_count=5, window=20, iter=10):
@@ -50,18 +50,21 @@ def item2vec_to_mat(model_path):
     #save_pickle(map_index, map_index_path)
     return emb_mat, map_index
 
+def get_item_data():
+    pass
 
 if __name__ == '__main__':
-    train_file_path = utils.get_data_path() + "item2vec/train.csv"
-    save_path = utils.get_model_path() + "saved_emb/item2vec.model"
-    print(utils.get_model_path())
+    get_item_data()
+    train_file_path = "item2vec/train.csv"
+    save_path = "item2vec/item2vec.model"
     #item2vec(train_file_path, save_path)
-    model = load_item2vec(save_path)
+    #model = load_item2vec(save_path)
     #print(model.most_similar("12488163", topn=10))
     emb_mat, map_index = item2vec_to_mat(save_path)
-    print(17098487.0,map_index[17098487.0])
+    print(14180662, map_index[14180662])
     print(len(map_index))
-    #saved_emb = tf.constant(emb_mat)
-    #goods_emb = tf.Variable(initial_value=saved_emb, trainable=False)
-    #goods_index = tf.placeholder(tf.int32, shape=[None], name='goods_index')
-    #goods_emb_table = tf.nn.embedding_lookup(goods_emb, goods_index)
+    saved_emb = tf.constant(emb_mat)
+    goods_emb = tf.Variable(initial_value=saved_emb, trainable=False)
+    goods_index = tf.placeholder(tf.int32, shape=[None, 12], name='goods_index')
+    goods_emb_table = tf.nn.embedding_lookup(goods_emb, goods_index)
+    pass

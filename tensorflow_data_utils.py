@@ -59,7 +59,7 @@ def encode(_key, _dict):
     return res_en
 
 def encode_kw(query, query_dict):
-    kw_en = [0] * 5
+    kw_en = [query_dict.get('unk')] * 5
     query_seg = query.split()
     for i in range(min(len(kw_en), len(query_seg))):
         kw_en[i] = query_dict.get(query_seg[i], 'unk')
@@ -78,7 +78,7 @@ def encode_birth(birth, _num):
 def encode(_key, _dict, _num):
     if _key in _dict: _encode = _dict[_key]
     else: _encode = _dict['unk']
-    return [_encode], _num + len(_dict)
+    return [_encode + _num], _num + len(_dict)
 
 def label_data(input_file='data/search_data_score.txt', out_path='tensorflow_rank_data/'):
     if not os.path.exists(out_path): os.mkdir(out_path)

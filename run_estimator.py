@@ -100,6 +100,6 @@ class seachRank:
         return ndcgs_mean
 
 if __name__ == "__main__":
-    #run()
-    sr = seachRank(); sr.test()
+    run()
+    #sr = seachRank(); sr.test()
     pass
