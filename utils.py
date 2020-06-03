@@ -48,15 +48,15 @@ def cal_ndcg(label_list, topk=10):
     ndcg = dcg / (idcg + 1e-8)
     return dcg, idcg, ndcg
 
-def calndcg(scores, labels):
+def calndcg(scores, labels, topk=10):
     score_label = [(scores[i], labels[i]) for i in range(len(scores))]
     sorted_score_label = sorted(score_label, key=lambda d: d[0], reverse=True)
     label_list = [v for k, v in sorted_score_label]
-    dcg, idcg, ndcg = cal_ndcg(label_list, len(label_list))
+    dcg, idcg, ndcg = cal_ndcg(label_list, topk)
     return ndcg
 
 if __name__ == "__main__":
-    labels = [1, 0]
-    #gen_test_train_data()
-    a=cal_ndcg(labels, len(labels))
+    labels = [1, 2]
+    gen_test_train_data()
+    a=cal_ndcg(labels, 1)
     pass

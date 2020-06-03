@@ -1,0 +1,52 @@
+用户特征：
+1、性别：gender					y
+2、年龄段：age_range			y
+3、国家：country				y
+4、语言：language				n
+5、os：platform					y
+6、近7天的一级品类偏好top10：first_cat_prefer_1w			n
+7、历史一级品类偏好top10：first_cat_prefer_his				n
+8、近7天的二级品类偏好top10：second_cat_prefer_1w			n
+9、历史二级品类偏好top10：second_cat_prefer_his				n
+10、近30天点击最多：second_cat_max_click_1m					n
+11、近30天收藏最多：second_cat_max_collect_1m				n
+12、近30天加购最多：second_cat_max_cart_1m					n
+13、近30天下单最多：second_cat_max_order_1m					n
+14、近7天的品牌偏好top10：brand_prefer_1w					n
+15、历史品牌偏好top10：brand_prefer_his						n
+16、近30天点击最多：brand_max_click_1m						n
+17、近30天收藏最多：brand_max_collect_1m					n
+18、近30天加购最多：brand_max_cart_1m						n
+19、近30天下单最多：brand_max_order_1m						n
+20、每日活跃时段（30天）：active_day_1m						n
+21、价格偏好层级：price_prefer_1w							n
+
+商品特征：
+1、列表点击：clicks
+2、列表展示：impressions
+3、销量：sales_order
+4、点击uv：users
+5、曝光uv：impression_users
+6、支付uv：payed_user_num
+7、成交额：gmv
+8、ctr：ctr
+9、gcr：gcr
+10、cr：cr
+11、click_cr：click_cr
+12、非物流退款率：grr
+13、7天上网率：sor
+14、物流退款率：lgrr
+15、评论评分：comment
+16、搜索评分：search_score
+17、1表示男，2表示女：gender
+18、搜索页点击数：search_click
+19、月销量：sales_order_m
+20、高斯得分：score
+21、rate：rate
+22、gr：gr
+23、cart_rate：cart_rate
+24、cart_uv：cart_uv
+25、cart_pv：cart_pv
+26、商品价格：shop_price
+27、商品价格加运费：show_price
+28、品牌id：brand_id

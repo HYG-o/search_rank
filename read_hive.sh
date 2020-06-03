@@ -1,0 +1,2 @@
+select * from tmp.tmp_top_search_result limit 20;			# hive -f read_hive.sh > search_data 执行
+hive -e 'set hive.execution.engine=tez; set hive.cli.print.header=true; set hive.resultset.use.unique.column.names=false;select * from tmp.tmp_top_search_result' | sed 's/x01/,/g' > /mnt/zn_search_data.txt

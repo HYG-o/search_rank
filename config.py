@@ -8,10 +8,6 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 pwd_path = os.path.abspath(os.path.dirname(__file__))
 
-MAX_NUM_NEG = 15         # 负采样数目
-VOCAB_SIZE = 10000       # 词汇表大小
-EMBEDDING_DIM = 128      # 词向量维度
-SEMANTIC_DIM = 64       # 语义向量大小
 SEQ_LEN = 12             # 序列长度
 
 class Config:
@@ -23,20 +19,11 @@ class Config:
         self.num_epochs = 1  # 总迭代轮次
         self.train_valid_ratio = 0.9    # 训练集和测试集的比例
         self.over_write_vocab = True   # 是否重写vocab文件
-        self.vocab = os.path.join(pwd_path, "dict/vocab")
-        self.idf = os.path.join(pwd_path, "dict/idf")
-        self.stop_words = os.path.join(pwd_path, "dict/stopwords.txt")
-        self.place_names = os.path.join(pwd_path, "dict/cities.csv")
-        self.func_file = "dict/func.txt"
-        self.indus_file = "dict/ind.txt"
-        self.entity_file = "dict/entitys.txt"
-        self.new_entity_file = "dict/newentity"#"dict/new_entity"
-        self.similarity_type = 'cosine'
-        self.mu_pos = 1.0
-        self.mu_neg = 1.0
-        self.C_emb = 1.2
-        self.use_max_sim_neg = False
-        self.jdtitledesc_file = "data/part-00000"
+        self.querys = os.path.join(pwd_path, "dict/querys")
+        self.plf = {"android": 0, "ios": 1, "pc": 2, "mob": 3, "unk": 4}
+        self.search_log_data = "search_log_data/zn_search_data.txt"
+        self.score_search_log_data = "search_log_data/score_search_data.txt"
+        self.xgboost_rank_data_path = "xgboost_rank_data/"
 
 conf = Config()
 

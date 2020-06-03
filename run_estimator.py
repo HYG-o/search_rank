@@ -2,7 +2,7 @@ from config import SEQ_LEN, FLAGS
 import tensorflow as tf
 from embedding import get_score
 from data_utils import gen_train_samples, gen_train_input_fn
-import model_utils
+import model_utils, sys
 from utils import load_data, calndcg
 import numpy as np
 from tqdm import tqdm
@@ -94,12 +94,14 @@ class seachRank:
             # fetch = self.sess.run(self.debug_info, feed_dict=feed_dict)
             fetch = self.sess.run({'score': self.score}, feed_dict=feed_dict)
             score = fetch['score'].flatten()
-            ndcgs[e] = calndcg(score, X["label"][ind].flatten())
+            ndcgs[e] = calndcg(score, X["label"][ind].flatten(), 10)
         ndcgs_mean = np.mean(ndcgs)
         print('test file: %s\tndcg mean: %.3f' % (test_file, ndcgs_mean))
         return ndcgs_mean
 
 if __name__ == "__main__":
-    run()
-    #sr = seachRank(); sr.test()
+    try: ckpt = sys.argv[1]
+    except: ckpt = 0
+    #run()
+    sr = seachRank(ckpt); sr.test()
     pass

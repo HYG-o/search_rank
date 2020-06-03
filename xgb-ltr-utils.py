@@ -3,12 +3,12 @@ from xgboost import DMatrix
 import xgboost as xgb
 #from sklearn.externals import joblib
 import matplotlib.pyplot as plt
-import joblib
-import random
+import joblib, random
+from config import conf
 
-DATA_PATH, TASK = "rank_data/", "search_rank"
+DATA_PATH, TASK = conf.xgboost_rank_data_path, "search_rank"
 #DATA_PATH, TASK = "D:/python projects/my-project-master/queryweight/get_jdcv_data/", "query_weight"       # TEST
-DATA_PATH, TASK = "MQ2008/Fold1/", "MQ"       # TEST
+#DATA_PATH, TASK = "MQ2008/Fold1/", "MQ"       # TEST
 #DATA_PATH, TASK = "tmp/", "MQ"       # TEST
 
 def load_group_data(group_data_file):
@@ -24,6 +24,7 @@ def save_data(group_data,output_feature,output_group):
     output_group.write(str(len(group_data))+"\n")
     for data in group_data:
         # only include nonzero features
+        #feats = [p for p in data[2:]]
         feats = [ p for p in data[2:] if float(p.split(':')[1]) != 0.0 ]
         output_feature.write(data[0] + " " + " ".join(feats) + "\n")
 
@@ -48,6 +49,7 @@ def trans_data(path):
 
 class xgbLtr:
     def __init__(self):
+        print("train data file: %s" % (DATA_PATH))
         self.train_file = DATA_PATH + TASK + ".train"
         self.valid_file = DATA_PATH + TASK + ".valid"
         self.test_file = DATA_PATH + TASK + ".test"
@@ -78,14 +80,14 @@ class xgbLtr:
         extra_pam = {}
         #extra_pam = {'verbosity':0, 'validate_parameters': True, 'subsample':0.1, 'lambda': 1.0, 'alpha': 1.0, 'tree_method': 'exact', \
         #             'early_stopping_rounds':1}
-        params = {'booster': 'gbtree', 'objective': 'rank:pairwise', 'eta': 1e-3, 'gamma': 1.0, 'min_child_weight': 0.1,
-                  'max_depth': 6, 'eval_metric': ['auc']}  # ndcg@1, logloss，auc
+        params = {'booster': 'gbtree', 'objective': 'rank:ndcg', 'eta': 1e-3, 'gamma': 1.0, 'min_child_weight': 0.1,
+                  'max_depth': 6, 'eval_metric': ['ndcg@10']}  # ndcg@1, logloss，auc
         params.update(extra_pam)
-        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=10, evals=[(self.valid_dmatrix, 'valid')])
-                              #evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
+        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, #evals=[(self.valid_dmatrix, 'valid')])
+                              evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
         pred = xgb_model.predict(self.valid_dmatrix)
         print("save model to %s" % (self.model_path))
-        xgb_model.dump_model(self.model_path + self.model_name + ".txt", './rank_data/feature.fmap')
+        xgb_model.dump_model(self.model_path + self.model_name + ".txt")
         xgb_model.save_model(self.model_path + self.model_name)
         joblib.dump(xgb_model, self.model_path + '/xgb_clf.m')
         # save figures

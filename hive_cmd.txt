@@ -1,0 +1,7 @@
+搜索日志：tmp.tmp_top_search_result
+用户信息：dws.dws_buyer_portrait
+商品信息：ads.ads_goods_id_behave
+
+select * from dws_buyer_portrait where buyer_id=69355414 and pt='2020-06-01';
+
+select * from tmp.tmp_top_search_result as log join dws.dws_buyer_portrait as user on log.buyer_id=user.buyer_id and user.pt='2020-06-01' limit 1;

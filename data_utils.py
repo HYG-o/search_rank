@@ -2,6 +2,9 @@ from config import FLAGS
 from tqdm import tqdm
 import numpy as np
 
+def search_log_data2label_data():
+    pass
+
 def load_data(file_name):
     print('load file: %s' % (file_name))
     feature, label, qid = [], [], []
@@ -21,5 +24,6 @@ def gen_train_input_fn(file_name):
     pass
 
 if __name__ == "__main__":
-    gen_train_samples(FLAGS.train_samples)
+    search_log_data2label_data()
+    #gen_train_samples(FLAGS.train_samples)
     pass
