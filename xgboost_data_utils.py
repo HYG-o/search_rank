@@ -9,27 +9,30 @@ def write_file(target_obj, file_name):
 
 def score_search_data():
     print("read search_log_data file: %s" % (conf.search_log_data))
-    text = [line.strip().lower().split("\t") for line in open(conf.search_log_data, encoding="utf8").readlines()]
-    assert len(FIELDS) == len(text[0])
+    #text = [line.strip().lower().split("\t") for line in open(conf.search_log_data, encoding="utf8").readlines()]
+    #assert len(FIELDS) == len(text[0])
     behavior_score = {"impression": 1, "click": 3, "cart": 6, "order": 9}
     kw, plf, fci, sci, bid = set(), set(), set(), set(), set()
     kw.add('unk')
     # 一个用户输入一个query对应的一个商品只能有一个行为数据样本
     # 根据搜索行为数据得到一个 用户-query-商品 的多个行为数据再选出打分最高的一条数据作为它的最终行为样本
     user_query_good_data = {}
-    for i, ele in enumerate(tqdm(text, total=len(text))):
-        if len(ele) != len(F2I): continue
-        try:
-            sbi, gid = ele[F2I['s-buyer_id']], ele[F2I['g-goods_id']]
-            key_words, click, abs_pos, ct = ele[F2I['s-key_words']], ele[F2I['s-click']], ele[F2I['s-absolute_position']], ele[F2I['s-collector_tstamp']]
-            kw.update(set(key_words.split())); fci.add(ele[F2I['s-first_cat_id']]); sci.add(ele[F2I['s-second_cat_id']]); bid.add(ele[F2I['s-brand_id']])
-            score = round((pow(2, behavior_score[click]) - 1) / math.log2(int(abs_pos) + 2), 3)
-            line_score = (ele, score)   ; a=ct.split()[0]
-            uqg = "-".join([sbi, key_words, gid])
-            if uqg not in user_query_good_data: user_query_good_data[uqg] = []
-            user_query_good_data[uqg].append(line_score)
-        except Exception as e:
-            s=1; continue
+    #for i, ele in enumerate(tqdm(text, total=len(text))):
+    with open(conf.search_log_data) as fin:
+        for line in fin:
+            ele = line.strip().lower().split("\t")
+            if len(ele) != len(F2I): continue
+            try:
+                sbi, gid = ele[F2I['s-buyer_id']], ele[F2I['g-goods_id']]
+                key_words, click, abs_pos, ct = ele[F2I['s-key_words']], ele[F2I['s-click']], ele[F2I['s-absolute_position']], ele[F2I['s-collector_tstamp']]
+                kw.update(set(key_words.split())); fci.add(ele[F2I['s-first_cat_id']]); sci.add(ele[F2I['s-second_cat_id']]); bid.add(ele[F2I['s-brand_id']])
+                score = round((pow(2, behavior_score[click]) - 1) / math.log2(int(abs_pos) + 2), 3)
+                line_score = (ele, score)   ; a=ct.split()[0]
+                uqg = "-".join([sbi, key_words, gid])
+                if uqg not in user_query_good_data: user_query_good_data[uqg] = []
+                user_query_good_data[uqg].append(line_score)
+            except Exception as e:
+                s=1; continue
     # 对 用户-query-商品 的多个行为结果进行排序选出分数最高的一个为样本，得到 用户-query 对应不同商品的行为数据
     user_query_good_sample = {}
     for user_query_good, datas in user_query_good_data.items():
@@ -53,7 +56,7 @@ def score_search_data():
             for e in sorted_data:
                 if e[0][click_index] == "impression": cnt += 1
                 samples.append(e)
-                if cnt >= 5: break
+                if cnt >= 1: break
             if len(samples) <= 1: continue
             for i, smp in enumerate(samples):
                 if smp[0][click_index] == 'order': _label_ = 3
