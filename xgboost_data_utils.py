@@ -63,6 +63,7 @@ def score_search_data():
                 elif smp[0][click_index] == 'cart': _label_ = 2
                 elif smp[0][click_index] == 'click': _label_ = 1
                 else: _label_ = 0
+                _label_ = len(samples) - i
                 sample_group.append("\t".join([str(smp[1]), str(_label_), "qid:" + str(qid)] + smp[0]))
             qid += 1
         except Exception as e:
@@ -80,12 +81,14 @@ def encode_kw(query, query_dict):
 
 def encode_birth(birth):
     age_encocde = [0] * 10
-    year, month, day = [int(e) for e in birth.split()[0].split("-")]
-    nyear, nmonth, nday = datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day
-    age = int((datetime.datetime(nyear, nmonth, nday) - datetime.datetime(year, month, day)).days / 365)
-    index = age // 10
-    if index >= 0 and index <= 10: age_encocde[index] = 1
-    else: age_encocde[0] = 1
+    try:
+        year, month, day = [int(e) for e in birth.split()[0].split("-")]
+        nyear, nmonth, nday = datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day
+        age = int((datetime.datetime(nyear, nmonth, nday) - datetime.datetime(year, month, day)).days / 365)
+        index = age // 10
+        if index >= 0 and index <= 10: age_encocde[index] = 1
+        else: age_encocde[0] = 1
+    except: age_encocde[0] = 1
     return age_encocde
 
 def encode_gender(gendr):
