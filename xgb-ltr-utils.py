@@ -87,8 +87,8 @@ class xgbLtr:
         params = {'booster': 'gbtree', 'objective': 'rank:pairwise', 'eta': 1e-4, 'gamma': 1.0, 'min_child_weight': 0.1,
                   'max_depth': 6, 'eval_metric': ['ndcg@1']}  # ndcg@1, logloss，auc
         params.update(extra_pam)
-        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, #evals=[(self.valid_dmatrix, 'valid')])
-                              evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
+        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, evals=[(self.valid_dmatrix, 'valid')])
+                              #evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
         pred = xgb_model.predict(self.valid_dmatrix)
         print("save model to %s" % (self.model_path))
         xgb_model.dump_model(self.model_path + self.model_name + ".txt")
@@ -100,7 +100,7 @@ class xgbLtr:
         plt.savefig(self.model_path + '/feature_importance.png', dpi=800, format='png')
 
     def plotXgboostTree(self):
-        xgb_model = xgb.Booster(model_file=self.model_path + self.model_name).eval()
+        xgb_model = xgb.Booster(model_file=self.model_path + self.model_name)
         xgbclf = joblib.load(self.model_path + '/xgb_clf.m')
         #plt.clf();    xgb.plot_tree(xgbclf, num_trees=0, fmap='./xgb.fmap');    plt.savefig('xgb_tree.png', dpi=800, format='png'); exit(0)
         for i in range(4):
@@ -129,7 +129,7 @@ class xgbLtr:
         score = self.xgb_model.predict(input)[0]
         return score
 
-    def test(self, fea_num=33):
+    def test(self, fea_num=33, topk=1):
         def cal_score():
             pass
         xgb_model = xgb.Booster(model_file=conf.xgb_rank_model + self.model_name)
@@ -157,10 +157,10 @@ class xgbLtr:
                 score_label.append((score, label))
             sorted_score_label = sorted(score_label, key=lambda d: d[0], reverse=True)
             label_list = [label for score, label in sorted_score_label]
-            dcg, idcg, ndcg = cal_ndcg(label_list)
+            dcg, idcg, ndcg = cal_ndcg(label_list, topk)
             ndcgs[i] = ndcg
         ndcgs_mean = np.mean(ndcgs)
-        print("ndcgs mean: %.3f" % (ndcgs_mean))
+        print("tok: %d\tndcgs mean: %.3f" % (topk, ndcgs_mean))
         pass
 
 
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     v2 = "1:763 2:713 3:713 4:713 5:713 8:1 9:1 17:1 25:0.02 26:0.003 30:0.8 33:0.003"
     s=v1 == v2
     xgb_ltr = xgbLtr()  ; #a1=xgb_ltr.predict(v1);a2=xgb_ltr.predict(v2) #xgb_ltr.plotXgboostTree()
-    xgb_ltr.test()  ;   exit()
+    #xgb_ltr.test()  ;   exit()
     xgb_ltr.load_data()
     xgb_ltr.train()
     pass

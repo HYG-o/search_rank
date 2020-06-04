@@ -154,7 +154,31 @@ def label_data():
     with open(out_path + "feature.fmap", "w", encoding="utf8") as fin:
         fin.write("\n".join(fmap))
 
+def get_valid_user_query_good_ids():
+    """
+    select * from tmp.tmp_top_search_result where buyer_id='90115146' and key_words='rolex' and goods_id='14056244' and click='impression';
+    """
+    user_query_good, res = {}, {}
+    text = [line.strip().lower().split("\t") for line in open(conf.score_search_log_data, encoding="utf8").readlines()[:100]]
+    f2i = {e: i for i, e in enumerate(text[0])}
+    for line in text[1:]:
+        sbi, skw, gid = line[f2i['s-buyer_id']], line[f2i['s-key_words']], line[f2i['g-goods_id']]
+        _key_ = "-".join([sbi, skw, gid])
+        user_query_good[_key_] = 1
+    with open("search_log_data/zn_search_data_1000000.txt") as fin:
+        for line in fin:
+            line_seg = line.strip().split("\t")
+            sb, sk, gg, sc = line_seg[F2I['s-buyer_id']], line_seg[F2I['s-key_words']], line_seg[F2I['g-goods_id']], line_seg[F2I['s-click']]
+            _k = "-".join([sb, sk, gg])
+            if _k not in user_query_good and sc != "impression" and _k in res: continue
+            res[_k] = line
+            a=1
+    with open("search_log_data/impression_data.txt", "w", encoding="utf8") as fin:
+        fin.write("".join(list(res.values())))
+    pass
+
 if __name__ == "__main__":
+    get_valid_user_query_good_ids(); exit()
     score_search_data()
     label_data()
     pass
