@@ -1,0 +1,30 @@
+[2020-06-04 17:02:58,988] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\model.py:30: The name tf.placeholder is deprecated. Please use tf.compat.v1.placeholder instead.
+
+[2020-06-04 17:02:58,996] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\model.py:38: The name tf.train.exponential_decay is deprecated. Please use tf.compat.v1.train.exponential_decay instead.
+
+[2020-06-04 17:02:59,002] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\tf_common\nn_module.py:288: The name tf.variable_scope is deprecated. Please use tf.compat.v1.variable_scope instead.
+
+[2020-06-04 17:02:59,003] WARNING: From C:\Users\Admin\anaconda3\envs\python36\lib\site-packages\tensorflow\python\ops\init_ops.py:1251: calling VarianceScaling.__init__ (from tensorflow.python.ops.init_ops) with dtype is deprecated and will be removed in a future version.
+Instructions for updating:
+Call initializer instance with the dtype argument instead of passing it to the constructor
+[2020-06-04 17:02:59,003] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\tf_common\nn_module.py:291: dense (from tensorflow.python.layers.core) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use keras.layers.dense instead.
+[2020-06-04 17:02:59,103] WARNING: Entity <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F64639F320>> could not be transformed and will be executed as-is. Please report this to the AutgoGraph team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output. Cause: converting <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F64639F320>>: AssertionError: Bad argument number for Name: 3, expecting 4
+[2020-06-04 17:02:59,187] WARNING: Entity <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F64634AFD0>> could not be transformed and will be executed as-is. Please report this to the AutgoGraph team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output. Cause: converting <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F64634AFD0>>: AssertionError: Bad argument number for Name: 3, expecting 4
+[2020-06-04 17:02:59,317] WARNING: Entity <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F64634AFD0>> could not be transformed and will be executed as-is. Please report this to the AutgoGraph team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output. Cause: converting <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F64634AFD0>>: AssertionError: Bad argument number for Name: 3, expecting 4
+[2020-06-04 17:02:59,401] WARNING: Entity <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F6463853C8>> could not be transformed and will be executed as-is. Please report this to the AutgoGraph team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output. Cause: converting <bound method Dense.call of <tensorflow.python.layers.core.Dense object at 0x000001F6463853C8>>: AssertionError: Bad argument number for Name: 3, expecting 4
+[2020-06-04 17:02:59,414] WARNING: From C:\Users\Admin\anaconda3\envs\python36\lib\site-packages\tensorflow\python\ops\nn_impl.py:180: add_dispatch_support.<locals>.wrapper (from tensorflow.python.ops.array_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.where in 2.0, which has the same broadcast rule as np.where
+[2020-06-04 17:02:59,426] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\model.py:356: The name tf.diag is deprecated. Please use tf.linalg.tensor_diag instead.
+
+[2020-06-04 17:02:59,441] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\model.py:364: The name tf.trainable_variables is deprecated. Please use tf.compat.v1.trainable_variables instead.
+
+[2020-06-04 17:02:59,794] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\model.py:373: The name tf.train.AdamOptimizer is deprecated. Please use tf.compat.v1.train.AdamOptimizer instead.
+
+[2020-06-04 17:02:59,794] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\model.py:376: The name tf.get_collection is deprecated. Please use tf.compat.v1.get_collection instead.
+
+[2020-06-04 17:02:59,920] WARNING: From D:\python projects\search_rank\tensorflow-LTR-master\src\model.py:136: The name tf.train.Saver is deprecated. Please use tf.compat.v1.train.Saver instead.
+
+[2020-06-04 17:02:59,942] INFO: fit on 902792 sample
