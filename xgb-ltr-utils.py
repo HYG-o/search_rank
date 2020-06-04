@@ -5,6 +5,8 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 import joblib, random
 from config import conf
+import numpy as np
+from scipy import sparse
 
 DATA_PATH, TASK = conf.xgboost_rank_data_path, "search_rank"
 #DATA_PATH, TASK = "D:/python projects/my-project-master/queryweight/get_jdcv_data/", "query_weight"       # TEST
@@ -25,7 +27,7 @@ def save_data(group_data,output_feature,output_group):
     for data in group_data:
         # only include nonzero features
         #feats = [p for p in data[2:]]
-        feats = [ p for p in data[2:] if float(p.split(':')[1]) != 0.0 ]
+        feats = [p for p in data[2:] if float(p.split(':')[1]) != 0.0 ]
         output_feature.write(data[0] + " " + " ".join(feats) + "\n")
 
 def trans_data(path):
@@ -53,7 +55,7 @@ class xgbLtr:
         self.train_file = DATA_PATH + TASK + ".train"
         self.valid_file = DATA_PATH + TASK + ".valid"
         self.test_file = DATA_PATH + TASK + ".test"
-        self.model_path = "rank_model/"
+        self.model_path = conf.xgb_rank_model
         self.model_name = TASK + "_xgb.model"
 
     def load_data(self):
@@ -80,10 +82,10 @@ class xgbLtr:
         extra_pam = {}
         #extra_pam = {'verbosity':0, 'validate_parameters': True, 'subsample':0.1, 'lambda': 1.0, 'alpha': 1.0, 'tree_method': 'exact', \
         #             'early_stopping_rounds':1}
-        params = {'booster': 'gbtree', 'objective': 'rank:ndcg', 'eta': 1e-3, 'gamma': 1.0, 'min_child_weight': 0.1,
-                  'max_depth': 6, 'eval_metric': ['ndcg@10']}  # ndcg@1, logloss，auc
+        params = {'booster': 'gbtree', 'objective': 'rank:ndcg', 'eta': 1e-4, 'gamma': 1.0, 'min_child_weight': 0.1,
+                  'max_depth': 6, 'eval_metric': ['ndcg@3']}  # ndcg@1, logloss，auc
         params.update(extra_pam)
-        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, #evals=[(self.valid_dmatrix, 'valid')])
+        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=1000, #evals=[(self.valid_dmatrix, 'valid')])
                               evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
         pred = xgb_model.predict(self.valid_dmatrix)
         print("save model to %s" % (self.model_path))
@@ -96,7 +98,7 @@ class xgbLtr:
         plt.savefig(self.model_path + '/feature_importance.png', dpi=800, format='png')
 
     def plotXgboostTree(self):
-        xgb_model = xgb.Booster(model_file=self.model_path + self.model_name)
+        xgb_model = xgb.Booster(model_file=self.model_path + self.model_name).eval()
         xgbclf = joblib.load(self.model_path + '/xgb_clf.m')
         #plt.clf();    xgb.plot_tree(xgbclf, num_trees=0, fmap='./xgb.fmap');    plt.savefig('xgb_tree.png', dpi=800, format='png'); exit(0)
         for i in range(4):
@@ -109,12 +111,27 @@ class xgbLtr:
             a=1
         pass
 
-    def predict(self):
-        pass
+    def predict(self, vec):
+        self.xgb_model = xgb.Booster(model_file=conf.xgb_rank_model + self.model_name)
+        feature_vector = [0] * 33
+        for ele in vec.split():
+            k, v = ele.split(":")
+            try: val = int(v)
+            except: val = float(v)
+            feature_vector[int(k)-1] = val
+            a=1
+        feature = np.array(feature_vector)
+        feature_csr = sparse.csr_matrix(feature)
+        input = DMatrix(feature_csr)
+        score = self.xgb_model.predict(input)[0]
+        return score
 
 
 if __name__ == "__main__":
-    xgb_ltr = xgbLtr()  ; #xgb_ltr.plotXgboostTree()
+    v1 = "1:763 2:713 3:713 4:713 5:713 8:1 9:1 17:1 24:23.79 25:0.017 26:0.001 27:0.001 28:0.047 29:0.024 30:0.947 31:0.047 32:8.651 33:0.006"
+    v2 = "1:763 2:713 3:713 4:713 5:713 8:1 9:1 17:1 25:0.02 26:0.003 30:0.8 33:0.003"
+    s=v1 == v2
+    xgb_ltr = xgbLtr()  ; a1=xgb_ltr.predict(v1);a2=xgb_ltr.predict(v2) #xgb_ltr.plotXgboostTree()
     xgb_ltr.load_data()
     xgb_ltr.train()
     pass
