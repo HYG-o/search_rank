@@ -63,7 +63,8 @@ def score_search_data():
                 elif smp[0][click_index] == 'cart': _label_ = 2
                 elif smp[0][click_index] == 'click': _label_ = 1
                 else: _label_ = 0
-                _label_ = len(samples) - i
+                #_label_ = len(samples) - i
+                #if smp[0][click_index] == 'impression': _label_ = 0
                 sample_group.append("\t".join([str(smp[1]), str(_label_), "qid:" + str(qid)] + smp[0]))
             qid += 1
         except Exception as e:
@@ -179,6 +180,6 @@ def get_valid_user_query_good_ids():
 
 if __name__ == "__main__":
     #get_valid_user_query_good_ids(); exit()
-    score_search_data()
-    label_data()
+    score_search_data()     # 读取搜索日志信息得到打分的标注文件
+    label_data()            # 得到 .train .test .valid 文件
     pass
