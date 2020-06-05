@@ -54,7 +54,6 @@ def trans_data(path):
 
 class xgbLtr:
     def __init__(self):
-        print("train data file: %s" % (DATA_PATH))
         self.train_file = DATA_PATH + TASK + ".train"
         self.valid_file = DATA_PATH + TASK + ".valid"
         self.test_file = DATA_PATH + TASK + ".test"
@@ -62,6 +61,7 @@ class xgbLtr:
         self.model_name = TASK + "_xgb.model"
 
     def load_data(self):
+        print("train data file: %s" % (DATA_PATH))
         trans_data(DATA_PATH)
         x_train, y_train = load_svmlight_file(self.train_file)
         x_valid, y_valid = load_svmlight_file(self.valid_file)
@@ -130,13 +130,14 @@ class xgbLtr:
         score = self.xgb_model.predict(input)[0]
         return score
 
-    def test(self, fea_num=30, topk=1):
+    def test(self, fea_num=30, topk=1, path=conf.xgboost_rank_data_path + "train.txt"):
         xgb_dict = parse_xgb_dict(conf.xgb_rank_model + self.model_name + ".txt")
         def cal_score():
             pass
         xgb_model = xgb.Booster(model_file=conf.xgb_rank_model + self.model_name)
         group_data = {}
-        text = [line.strip().split() for line in open(conf.xgboost_rank_data_path + "test.txt", encoding="utf8").readlines()]
+        print("test file: %s" % (path))
+        text = [line.strip().split() for line in open(path, encoding="utf8").readlines()]
         for line in text:
             if line[1] not in group_data: group_data[line[1]] = []
             group_data[line[1]].append(line)
