@@ -86,7 +86,7 @@ class xgbLtr:
         extra_pam = {'verbosity':0, 'validate_parameters': True, 'subsample':0.1, 'lambda': 0.6, 'alpha': 0.8,  \
                      'early_stopping_rounds':1}
         params = {'booster': 'gbtree', 'objective': 'rank:ndcg', 'eta': 1e-3, 'gamma': 10.0, 'min_child_weight': 0.1,
-                  'max_depth': 6, 'eval_metric': ['ndcg@1']}  # ndcg@1, logloss，auc
+                  'max_depth': 6, 'eval_metric': ['ndcg']}  # ndcg@1, logloss，auc
         params.update(extra_pam)
         xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, #evals=[(self.valid_dmatrix, 'valid')])
                               evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
@@ -130,13 +130,13 @@ class xgbLtr:
         score = self.xgb_model.predict(input)[0]
         return score
 
-    def test(self, fea_num=30, topk=1, path=conf.xgboost_rank_data_path + "train.txt"):
+    def test(self, fea_num=30, topk=1, path=conf.xgboost_rank_data_path + "valid.txt"):
         xgb_dict = parse_xgb_dict(conf.xgb_rank_model + self.model_name + ".txt")
         def cal_score():
             pass
         xgb_model = xgb.Booster(model_file=conf.xgb_rank_model + self.model_name)
         group_data = {}
-        print("test file: %s" % (path))
+        print("test file: %s\ttree number: %d" % (path, len(xgb_dict)))
         text = [line.strip().split() for line in open(path, encoding="utf8").readlines()]
         for line in text:
             if line[1] not in group_data: group_data[line[1]] = []
@@ -162,7 +162,7 @@ class xgbLtr:
             sorted_score_label = sorted(score_label, key=lambda d: d[0], reverse=True)
             label_list = [label for score, label in sorted_score_label]
             dcg, idcg, ndcg = cal_ndcg(label_list, topk)
-            if len(set(label_list)) <= 1: continue
+            #if len(set(label_list)) <= 1: continue
             ndcgs.append(ndcg)   #[i] = ndcg
         ndcgs_mean = np.mean(np.array(ndcgs))   #np.mean(ndcgs)
         print("topk: %d\tndcgs mean: %.3f" % (topk, ndcgs_mean))
