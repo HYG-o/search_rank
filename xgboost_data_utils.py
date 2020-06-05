@@ -56,7 +56,7 @@ def score_search_data():
             for e in sorted_data:
                 if e[0][click_index] == "impression": cnt += 1
                 samples.append(e)
-                if cnt >= 1: break
+                if cnt >= 6: break
             if len(samples) <= 1: continue
             for i, smp in enumerate(samples):
                 if smp[0][click_index] == 'order': _label_ = 3
@@ -178,7 +178,7 @@ def get_valid_user_query_good_ids():
     pass
 
 if __name__ == "__main__":
-    get_valid_user_query_good_ids(); exit()
+    #get_valid_user_query_good_ids(); exit()
     score_search_data()
     label_data()
     pass
