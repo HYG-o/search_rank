@@ -81,15 +81,17 @@ def encode_kw(query, query_dict):
     return kw_en
 
 def encode_birth(birth):
-    age_encocde = [0] * 10
+    index, age_encocde = 0, [0] * 5
     try:
         year, month, day = [int(e) for e in birth.split()[0].split("-")]
         nyear, nmonth, nday = datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day
         age = int((datetime.datetime(nyear, nmonth, nday) - datetime.datetime(year, month, day)).days / 365)
-        index = age // 10
-        if index >= 0 and index <= 10: age_encocde[index] = 1
-        else: age_encocde[0] = 1
-    except: age_encocde[0] = 1
+        if age < 15: index = 1
+        elif age < 35: index = 2
+        elif age < 45: index = 3
+        else: idnex =  4
+    except: pass
+    age_encocde[index] = 1
     return age_encocde
 
 def encode_gender(gendr):
@@ -113,7 +115,7 @@ def label_data():
     f2i = {e: i for i, e in enumerate(sds[0])}
     i2f = {i: e for i, e in enumerate(sds[0])}
     res = []; flag = True; fidindex = 0; fmap = []; fea_num = 0
-    continue_good_features = ['gmv','ctr','gcr','cr','click_cr','grr','sor','rate','gr','cart_rate']
+    continue_good_features = ['gmv','ctr','gcr','cr','click_cr','grr','sor','lgrr','score','rate','gr','cart_rate']
     for line in tqdm(sds[1:], total=len(sds)):    # 每一行解析为一个特征向量
         line_value = {i2f[i]: e for i, e in enumerate(line)}
         skw, sfcn, sscn, sbid = line[f2i['s-key_words']], line[f2i['s-first_cat_id']], line[f2i['s-second_cat_id']], line[f2i['s-brand_id']]
@@ -131,8 +133,9 @@ def label_data():
             ('性别的编码', gdr_encode, 'gender', len(gdr_encode)),
             ('平台的编码', plf_encode, 'platform', len(plf_encode)),
             ('年龄的编码', age_encode, 'age', len(age_encode)),
-            ('连续的编码', continue_val, 'continue', len(continue_val)),
         ]
+        con_fea = [('连续的编码' + str(i), [continue_val[i]], continue_good_features[i], 1) for i, e in enumerate(continue_val)]
+        features.extend(con_fea)
         feature_vector = []
         for fid in features:
             feature_vector.extend(fid[1])
@@ -180,6 +183,6 @@ def get_valid_user_query_good_ids():
 
 if __name__ == "__main__":
     #get_valid_user_query_good_ids(); exit()
-    score_search_data()     # 读取搜索日志信息得到打分的标注文件
-    label_data()            # 得到 .train .test .valid 文件
+    #score_search_data()     # 读取搜索日志信息得到打分的标注文件
+    label_data()            # 解析打分的标注文件得到 .train .test .valid 文件
     pass

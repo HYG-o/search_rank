@@ -9,6 +9,7 @@ import numpy as np
 from scipy import sparse
 from utils import cal_ndcg
 from tqdm import tqdm
+from xgb_utils import parse_xgb_dict, predict_proba
 
 DATA_PATH, TASK = conf.xgboost_rank_data_path, "search_rank"
 #DATA_PATH, TASK = "D:/python projects/my-project-master/queryweight/get_jdcv_data/", "query_weight"       # TEST
@@ -82,13 +83,13 @@ class xgbLtr:
 
     def train(self):
         extra_pam = {}
-        #extra_pam = {'verbosity':0, 'validate_parameters': True, 'subsample':0.1, 'lambda': 1.0, 'alpha': 1.0, 'tree_method': 'exact', \
-        #             'early_stopping_rounds':1}
-        params = {'booster': 'gbtree', 'objective': 'rank:pairwise', 'eta': 1e-4, 'gamma': 1.0, 'min_child_weight': 0.1,
+        extra_pam = {'verbosity':0, 'validate_parameters': True, 'subsample':0.1, 'lambda': 0.6, 'alpha': 0.8,  \
+                     'early_stopping_rounds':1}
+        params = {'booster': 'gbtree', 'objective': 'rank:ndcg', 'eta': 1e-3, 'gamma': 10.0, 'min_child_weight': 0.1,
                   'max_depth': 6, 'eval_metric': ['ndcg@1']}  # ndcg@1, logloss，auc
         params.update(extra_pam)
-        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, evals=[(self.valid_dmatrix, 'valid')])
-                              #evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
+        xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, #evals=[(self.valid_dmatrix, 'valid')])
+                              evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
         pred = xgb_model.predict(self.valid_dmatrix)
         print("save model to %s" % (self.model_path))
         xgb_model.dump_model(self.model_path + self.model_name + ".txt")
@@ -116,8 +117,8 @@ class xgbLtr:
     def predict(self, vec):
         print("xgb model file: %s" % (conf.xgb_rank_model))
         self.xgb_model = xgb.Booster(model_file=conf.xgb_rank_model + self.model_name)
-        feature_vector = [0] * 33
-        for ele in vec.split():
+        feature_vector = [0] * 30
+        for ele in vec.split()[2:]:
             k, v = ele.split(":")
             try: val = int(v)
             except: val = float(v)
@@ -129,7 +130,8 @@ class xgbLtr:
         score = self.xgb_model.predict(input)[0]
         return score
 
-    def test(self, fea_num=33, topk=1):
+    def test(self, fea_num=30, topk=1):
+        xgb_dict = parse_xgb_dict(conf.xgb_rank_model + self.model_name + ".txt")
         def cal_score():
             pass
         xgb_model = xgb.Booster(model_file=conf.xgb_rank_model + self.model_name)
@@ -139,7 +141,7 @@ class xgbLtr:
             if line[1] not in group_data: group_data[line[1]] = []
             group_data[line[1]].append(line)
         group_data = {k: v for k, v in group_data.items() if len(v) > 1}
-        ndcgs = np.zeros(len(group_data))
+        ndcgs = []  #np.zeros(len(group_data))
         for i, (_, datas) in enumerate(tqdm(group_data.items(), total=len(group_data))):
             score_label = []
             for ele in datas:
@@ -153,23 +155,24 @@ class xgbLtr:
                 feature = np.array(feature_vector)
                 feature_csr = sparse.csr_matrix(feature)
                 input = DMatrix(feature_csr)
-                score = xgb_model.predict(input)[0]
+                score = xgb_model.predict(input)[0]            # xgboost 自带的预测函数
+                #score = predict_proba(xgb_dict, feature)        # 解析 .txt 模型文件得到的预测函数
                 score_label.append((score, label))
             sorted_score_label = sorted(score_label, key=lambda d: d[0], reverse=True)
             label_list = [label for score, label in sorted_score_label]
             dcg, idcg, ndcg = cal_ndcg(label_list, topk)
-            ndcgs[i] = ndcg
-        ndcgs_mean = np.mean(ndcgs)
-        print("tok: %d\tndcgs mean: %.3f" % (topk, ndcgs_mean))
+            if len(set(label_list)) <= 1: continue
+            ndcgs.append(ndcg)   #[i] = ndcg
+        ndcgs_mean = np.mean(np.array(ndcgs))   #np.mean(ndcgs)
+        print("topk: %d\tndcgs mean: %.3f" % (topk, ndcgs_mean))
         pass
 
 
 if __name__ == "__main__":
-    v1 = "1:763 2:713 3:713 4:713 5:713 8:1 9:1 17:1 24:23.79 25:0.017 26:0.001 27:0.001 28:0.047 29:0.024 30:0.947 31:0.047 32:8.651 33:0.006"
-    v2 = "1:763 2:713 3:713 4:713 5:713 8:1 9:1 17:1 25:0.02 26:0.003 30:0.8 33:0.003"
-    s=v1 == v2
-    xgb_ltr = xgbLtr()  ; #a1=xgb_ltr.predict(v1);a2=xgb_ltr.predict(v2) #xgb_ltr.plotXgboostTree()
-    #xgb_ltr.test()  ;   exit()
+    f1 = "3 qid:238470 1:780 2:148 3:148 4:148 5:148 7:1 10:1 17:1 19:39.1 20:0.027 21:0.003 22:0.002 23:0.028 25:0.764 27:1.425 28:0.028 29:55.07 30:0.003"
+    f2 = "1 qid:238470 1:780 2:148 3:148 4:148 5:148 7:1 10:1 17:1 19:108.79 20:0.023 21:0.01 22:0.001 23:0.028 24:0.042 25:0.907 27:1.703 28:0.044 29:43.171 30:0.003"
+    xgb_ltr = xgbLtr()  #; v1=xgb_ltr.predict(f1); v2=xgb_ltr.predict(f2) #; xgb_ltr.plotXgboostTree()
+    xgb_ltr.test(topk=10)  ;   exit()
     xgb_ltr.load_data()
     xgb_ltr.train()
     pass
