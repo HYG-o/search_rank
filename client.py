@@ -7,7 +7,7 @@ url = "http://%s:%s/%s" % ("127.0.0.1", "51658", "search_rank")
 #url = "http://%s:%s/%s" % ("192.168.7.205", "51658", "search_rank")
 #url = "http://algo.rpc/search_rank"
 
-http_client = HTTPClient()
+#http_client = HTTPClient()
 
 def get_res(feature_dict):
     obj = {"header": {},"request": {"c": "", "m": "search_rank", "p": {"feature_dict": feature_dict}}}
