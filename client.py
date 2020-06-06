@@ -1,4 +1,4 @@
-import tornado, json, sys, time
+import tornado, json, sys, time, requests
 from tornado.httpclient import HTTPClient
 
 #curl -i -X POST -H 'Content-type':'application/json' -d '{"header":{},"request":{"c":"","m":"query_correct","p":{"query":"andio"}}}' http://192.168.9.140:1111/query_correct
@@ -11,14 +11,20 @@ http_client = HTTPClient()
 
 def get_res(feature_dict):
     obj = {"header": {},"request": {"c": "", "m": "search_rank", "p": {"feature_dict": feature_dict}}}
+
+    headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
+    response = requests.post(url, data=json.dumps(obj), headers=headers)
+    result = json.loads(response.text)
+    """
     response = http_client.fetch(tornado.httpclient.HTTPRequest(
         url=url,
         method="POST",
         headers={'Content-type': 'application/json'},
         body=json.dumps(obj, ensure_ascii=False)
     ))
-    result = json.loads(response.buffer.read().decode("utf-8", errors='ignore'))
+    result1 = json.loads(response.buffer.read().decode("utf-8", errors='ignore'))
     http_client.close()
+    """
     return result
 
 if __name__ == '__main__':
