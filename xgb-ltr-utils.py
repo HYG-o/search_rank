@@ -85,8 +85,8 @@ class xgbLtr:
         extra_pam = {}
         extra_pam = {'verbosity':0, 'validate_parameters': True, 'subsample':0.1, 'lambda': 0.6, 'alpha': 0.8,  \
                      'early_stopping_rounds':1}
-        params = {'booster': 'gbtree', 'objective': 'rank:ndcg', 'eta': 1e-3, 'gamma': 10.0, 'min_child_weight': 0.1,
-                  'max_depth': 6, 'eval_metric': ['ndcg']}  # ndcg@1, logloss，auc
+        params = {'booster': 'gbtree', 'objective': 'rank:pairwise', 'eta': 1e-3, 'gamma': 10.0, 'min_child_weight': 0.1,
+                  'max_depth': 6, 'eval_metric': ['logloss']}  # ndcg@1, logloss，auc
         params.update(extra_pam)
         xgb_model = xgb.train(params, self.train_dmatrix, num_boost_round=100, #evals=[(self.valid_dmatrix, 'valid')])
                               evals=[(self.train_dmatrix, 'train'), (self.valid_dmatrix, 'valid'), (self.test_dmatrix, 'test')])
@@ -162,7 +162,7 @@ class xgbLtr:
             sorted_score_label = sorted(score_label, key=lambda d: d[0], reverse=True)
             label_list = [label for score, label in sorted_score_label]
             dcg, idcg, ndcg = cal_ndcg(label_list, topk)
-            #if len(set(label_list)) <= 1: continue
+            if len(set(label_list)) <= 1: continue
             ndcgs.append(ndcg)   #[i] = ndcg
         ndcgs_mean = np.mean(np.array(ndcgs))   #np.mean(ndcgs)
         print("topk: %d\tndcgs mean: %.3f" % (topk, ndcgs_mean))

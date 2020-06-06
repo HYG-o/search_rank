@@ -75,9 +75,9 @@ def score_search_data():
 
 def encode_kw(query, query_dict):
     kw_en = [query_dict.get('unk')] * 5
-    query_seg = query.split()
+    query_seg = query.lower().split()
     for i in range(min(len(kw_en), len(query_seg))):
-        kw_en[i] = query_dict.get(query_seg[i], 'unk')
+        if query_seg[i] in query_dict: kw_en[i] = query_dict.get(query_seg[i])
     return kw_en
 
 def encode_birth(birth):

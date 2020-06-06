@@ -56,7 +56,7 @@ def calndcg(scores, labels, topk=10):
     return ndcg
 
 if __name__ == "__main__":
-    labels = [5, 2, 3, 4, 1]
+    labels = [1,0,0,1]
     #gen_test_train_data()
-    a=cal_ndcg(labels, 1)
+    a=cal_ndcg(labels, 3)
     pass
