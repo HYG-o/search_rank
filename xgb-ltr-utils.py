@@ -130,7 +130,7 @@ class xgbLtr:
         score = self.xgb_model.predict(input)[0]
         return score
 
-    def test(self, fea_num=24, topk=1, path=conf.xgboost_rank_data_path + "valid.txt"):
+    def test(self, fea_num=24, topk=1, path=conf.rank_data_file + "valid.txt"):
         xgb_dict = parse_xgb_dict(conf.xgb_rank_model + self.model_name + ".txt")
         def cal_score():
             pass
@@ -143,7 +143,8 @@ class xgbLtr:
             group_data[line[1]].append(line)
         group_data = {k: v for k, v in group_data.items() if len(v) > 1}
         ndcgs = []  #np.zeros(len(group_data))
-        for i, (_, datas) in enumerate(tqdm(group_data.items(), total=len(group_data))):
+        #for i, (_, datas) in enumerate(tqdm(group_data.items(), total=len(group_data))):
+        for i, (_, datas) in enumerate(group_data.items()):
             score_label = []
             for ele in datas:
                 feature_vector = [0] * fea_num

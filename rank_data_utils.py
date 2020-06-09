@@ -16,7 +16,7 @@ def score_search_data(log_data_file, score_label_data):
     #assert len(FIELDS) == len(text[0])
     behavior_score = {"impression": 1, "click": 3, "cart": 6, "order": 9}
     kw, plf, fci, sci, bid = set(), set(), set(), set(), set()
-    kw.add('unk')
+    kw.add('unk'); kw.add('pad')
     # 一个用户输入一个query对应的一个商品只能有一个行为数据样本
     # 根据搜索行为数据得到一个 用户-query-商品 的多个行为数据再选出打分最高的一条数据作为它的最终行为样本
     user_query_good_data = {}
@@ -79,9 +79,10 @@ def score_search_data(log_data_file, score_label_data):
 def encode_kw(query, query_dict):
     query_seg = query.lower().split()
     #'''
-    kw_en = [query_dict.get('unk')] * 5
+    kw_en = [query_dict.get('pad')] * 5
     for i in range(min(len(kw_en), len(query_seg))):
         if query_seg[i] in query_dict: kw_en[i] = query_dict.get(query_seg[i])
+        else: kw_en[i] = query_dict.get('unk')
     '''
     kw_en = [0] * len(query_dict)
     for e in query_seg:
@@ -243,5 +244,5 @@ def label_data(score_label_data, rank_data_file):
         fin.write("\n".join(fmap))
 
 if __name__ == "__main__":
-    #score_search_data(conf.search_log_data, conf.score_label_data)
+    #(conf.search_log_data, conf.score_label_data)
     label_data(conf.score_label_data, conf.rank_data_file)

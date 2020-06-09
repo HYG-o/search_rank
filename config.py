@@ -21,7 +21,7 @@ class Config:
         self.over_write_vocab = True   # 是否重写vocab文件
         self.querys = os.path.join(pwd_path, "dict/querys")
         self.plf = {"android": 0, "ios": 1, "pc": 2, "mob": 3, "unk": 4}
-        self.search_log_data = "search_log_data/zn_search_data1.txt"
+        self.search_log_data = "search_log_data/zn_search_data.txt"
         self.score_search_log_data = "search_log_data/score_search_data.txt"
         self.xgboost_rank_data_path = "xgboost_rank_data/"
         self.xgb_rank_model = "xgb_rank_model/"
