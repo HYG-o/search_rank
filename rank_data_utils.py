@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 def write_file(target_obj, file_name):
     target_obj = [e for e in target_obj if e not in ['', ' ']]
-    json.dump({e: i for i, e in enumerate(target_obj)}, open(file_name, 'w', encoding='utf8'), indent=2)
+    json.dump({e: i+1 for i, e in enumerate(target_obj)}, open(file_name, 'w', encoding='utf8'), indent=2)
 
 def score_search_data(log_data_file, score_label_data):
     print("read search_log_data file: %s\twrite score_label_data: %s" % (log_data_file, score_label_data))
@@ -211,7 +211,7 @@ def label_data(score_label_data, rank_data_file):
         feature_vector = []
         # 产生特征编码用于神经网络模型
         id2emb = {"query_emb_len": len(kw_encode), "query_number": len(querys), "continue_fea_num": len(con_fea)}
-        fea_index, emb_index = len(kw_encode), len(querys)
+        fea_index, emb_index = len(kw_encode), len(querys) + 1
         for fea in features[1:]:
             for i, e in enumerate(fea[1]):
                 id2emb[fea_index + 1] = emb_index
@@ -227,10 +227,14 @@ def label_data(score_label_data, rank_data_file):
         #line_feature = [line[1], line[2]] + [str(i+1) + ":" + str(e) for i, e in enumerate(feature_vector)]
         a, aa = feature_vector[: -len(con_fea)], feature_vector[-len(con_fea):]
         line_feature = [line[1], line[2]] + [str(i + 1) + ":" + str(e) for i, e in enumerate(feature_vector) if e != 0]
-        fea_dis = [line[1], line[2]] + [str(i + 1) + ":" + str(e) for i, e in enumerate(feature_vector[: -len(con_fea)]) if e != 0]
+        fea_query = [line[1], line[2]] + [str(i + 1) + ":" + str(e) for i, e in enumerate(feature_vector[: len(kw_encode)])]
+        fea_dis = [str(len(kw_encode) + i + 1) + ":" + str(e) for i, e in enumerate(feature_vector[len(kw_encode): -len(con_fea)]) if e != 0]
         fea_con = [str(len(feature_vector) - len(con_fea) + i + 1) + ":" + str(e) for i, e in enumerate(feature_vector[-len(con_fea):])]
-        res.append(" ".join(fea_dis + fea_con))
-        id2emb['fea_dim'] = len(fea_dis) + len(fea_con) - 2
+        feat = fea_query + fea_dis + fea_con
+        res.append(" ".join(feat))
+        id2emb['fea_dim'] = len(feat) - 2
+        if len(feat) - 2 != 28:
+            a=1
     #random.shuffle(res)
     print("feature vector length: %d" % (fea_num))
     json.dump(id2emb, open(conf.emb_data, "w", encoding="utf8"), indent=2)
@@ -244,5 +248,5 @@ def label_data(score_label_data, rank_data_file):
         fin.write("\n".join(fmap))
 
 if __name__ == "__main__":
-    #(conf.search_log_data, conf.score_label_data)
+    #score_search_data(conf.search_log_data, conf.score_label_data)
     label_data(conf.score_label_data, conf.rank_data_file)

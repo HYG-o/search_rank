@@ -116,6 +116,6 @@ class seachRank:
 if __name__ == "__main__":
     try: ckpt = sys.argv[1]
     except: ckpt = 0
-    #run()
-    sr = seachRank(ckpt); sr.test()
+    run()
+    #sr = seachRank(ckpt); sr.test()
     pass

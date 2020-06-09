@@ -31,6 +31,10 @@ def load_data(file_name, emb_data):
             v = float(v)
             emb.append(emb_data[k])
             vec.append(v)
+        if len(emb) != emb_data['fea_dim']:
+            a=1
+        assert len(emb) == emb_data['fea_dim']
+        assert len(vec) == emb_data['fea_dim']
         feature_emb.append(emb); feature_vec.append(vec)
     res = {'feature_emb': np.array(feature_emb), 'feature_vec': np.array(feature_vec), 'label': np.array(label), 'qid': np.array(qid)}
     return res

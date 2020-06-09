@@ -89,8 +89,8 @@ class nn_ltr:
             for i, idx in enumerate(batches):
                 ind = idx
                 feed_dict = self._get_feed_dict(self.X_train, ind, training=True)
-                Asess_out = self.sess.run({'loss': self.loss, 'train_op': self.train_op, 'learn_rate': self.learning_rate,
-                                           'debug_info': self.debug_info}, feed_dict=feed_dict)
+                #Asess_out = self.sess.run({'loss': self.loss, 'train_op': self.train_op, 'learn_rate': self.learning_rate,
+                #                           'debug_info': self.debug_info}, feed_dict=feed_dict)
                 loss, lr, opt = self.sess.run((self.loss, self.learning_rate, self.train_op), feed_dict=feed_dict)
                 total_batch += 1
                 if total_batch % conf.eval_every_num_update == 0:
@@ -111,7 +111,7 @@ class nn_ltr:
             self.feature_vec: X["feature_vec"][idx],
             self.label: X["label"][idx].reshape((-1, 1)),
             self.qid: X["qid"][idx].reshape((-1, 1)),
-            self.sorted_label: np.sort(X["label"][idx].reshape((-1, 1)))[::-1],
+            #self.sorted_label: np.sort(X["label"][idx].reshape((-1, 1)))[::-1],
             self.is_training: training,
             self.batch_size: len(idx),
         }
