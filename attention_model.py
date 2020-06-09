@@ -6,7 +6,7 @@ class AttentionConfig(object):
     """Attention 配置参数"""
     pass
 
-def attention_net(input_x, is_training=True, scope='AttenNet', config=AttentionConfig()):
+def attention_net(input_x, input_val, is_training=True, scope='AttenNet', config=AttentionConfig()):
     debug_info = {}
     with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
         bsz = tf.shape(input_x)[0]
@@ -36,7 +36,7 @@ def attention_net(input_x, is_training=True, scope='AttenNet', config=AttentionC
         xlnet_model = xlnet.XLNetModel(
             xlnet_config=xlnet_config,
             run_config=run_config,
-            input_ids=inp,
+            input_ids=inp, input_vals=input_val,
             seg_ids=seg_id,
             input_mask=inp_mask)
         # Get a summary of the sequence using the last hidden state

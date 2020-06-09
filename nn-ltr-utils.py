@@ -1,4 +1,4 @@
-import time
+import time, json
 import numpy as np
 from embedding import Encoder, get_score
 from tqdm import tqdm
@@ -12,11 +12,13 @@ import model_utils
 class nn_ltr:
     def __init__(self, model_type='atten'):
         self.debug_info = {}
-        self.train_file = "tensorflow_rank_data/train1.txt"
-        self.test_file = "tensorflow_rank_data/test1.txt"
-        self.valid_file = "tensorflow_rank_data/valid1.txt"
+        self.train_file = conf.rank_data_file + "train.txt" #"tensorflow_rank_data/train1.txt"
+        self.test_file = conf.rank_data_file + "test.txt" #"tensorflow_rank_data/test1.txt"
+        self.valid_file = conf.rank_data_file + "valid.txt" #"tensorflow_rank_data/valid1.txt"
+        self.emb_data = json.load(open(conf.emb_data))
         self.model_dir = "nn_model"
-        self.feature = tf.placeholder(tf.int32, [None, SEQ_LEN], name='input_seq_feature')  # [batch_size, SEQ_LEN]
+        self.feature_emb = tf.placeholder(tf.int32, [None, self.emb_data['fea_dim']], name='input_seq_feature_emb')  # [batch_size, SEQ_LEN]
+        self.feature_vec = tf.placeholder(tf.float32, [None, self.emb_data['fea_dim']], name='input_seq_feature_vec')  # [batch_size, SEQ_LEN]
         self.is_training = tf.placeholder_with_default(True, shape=())
         self.label = tf.placeholder(tf.float32, shape=[None, 1], name="label")
         self.qid = tf.placeholder(tf.float32, shape=[None, 1], name="qid")
@@ -34,12 +36,12 @@ class nn_ltr:
         self.saver = tf.train.Saver()
 
     def get_train_data(self):
-        self.X_train = load_data(self.train_file)
-        self.X_test = load_data(self.test_file)
-        self.X_valid = load_data(self.valid_file)
+        self.X_train = load_data(self.train_file, self.emb_data)
+        self.X_test = load_data(self.test_file, self.emb_data)
+        self.X_valid = load_data(self.valid_file, self.emb_data)
 
     def score_fn(self):
-        score, debug_info = get_score(self.feature, self.is_training)   ; self.debug_info['encoder_debug_info']=debug_info
+        score, debug_info = get_score(self.feature_emb, self.feature_vec, self.is_training)   ; self.debug_info['encoder_debug_info']=debug_info
 
         # calculate pairwise loss
         S_ij = self.label - tf.transpose(self.label)    ; self.debug_info['label']=self.label
@@ -53,7 +55,7 @@ class nn_ltr:
         mask1 = tf.equal(self.qid - tf.transpose(self.qid), 0)      ; self.debug_info['qid']=self.qid
         mask1 = tf.cast(mask1, tf.float32)
         # exclude the pair of sample and itself
-        n = tf.shape(self.feature)[0]
+        n = tf.shape(self.feature_emb)[0]
         mask2 = tf.ones([n, n]) - tf.diag(tf.ones([n]))
         mask = mask1 * mask2
         num_pairs = tf.reduce_sum(mask)     ; self.debug_info['mask1']=mask1; self.debug_info['mask2']=mask2; self.debug_info['mask']=mask
@@ -72,7 +74,7 @@ class nn_ltr:
         start_time = time.time()
         print('Training and evaluating...')
         self.sess.run(tf.global_variables_initializer())
-        l = self.X_train["feature"].shape[0]
+        l = self.X_train["feature_emb"].shape[0]
         qid_unique = np.unique(self.X_train["qid"])
         num_qid_unique = len(qid_unique)
         train_idx_shuffle = np.arange(l)
@@ -105,7 +107,8 @@ class nn_ltr:
 
     def _get_feed_dict(self, X, idx, training=False):
         feed_dict = {
-            self.feature: X["feature"][idx],
+            self.feature_emb: X["feature_emb"][idx],
+            self.feature_vec: X["feature_vec"][idx],
             self.label: X["label"][idx].reshape((-1, 1)),
             self.qid: X["qid"][idx].reshape((-1, 1)),
             self.sorted_label: np.sort(X["label"][idx].reshape((-1, 1)))[::-1],

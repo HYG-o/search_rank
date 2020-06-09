@@ -1,15 +1,18 @@
-import math, json, datetime, os, random
-from tqdm import tqdm
-from hive_utils import FIELDS, F2I, I2F
+"""
+根据用户历史的行为数据（用户画像、query、商品画像）产生排序的训练和测试文件
+"""
+import math, json, os, datetime
+from hive_utils import F2I, FIELDS
 from config import conf
+from tqdm import tqdm
 
 def write_file(target_obj, file_name):
     target_obj = [e for e in target_obj if e not in ['', ' ']]
     json.dump({e: i for i, e in enumerate(target_obj)}, open(file_name, 'w', encoding='utf8'), indent=2)
 
-def score_search_data():
-    print("read search_log_data file: %s" % (conf.search_log_data))
-    #text = [line.strip().lower().split("\t") for line in open(conf.search_log_data, encoding="utf8").readlines()]
+def score_search_data(log_data_file, score_label_data):
+    print("read search_log_data file: %s\twrite score_label_data: %s" % (log_data_file, score_label_data))
+    # = [line.strip().lower().split("\t") for line in open(log_data_file, encoding="utf8").readlines()]
     #assert len(FIELDS) == len(text[0])
     behavior_score = {"impression": 1, "click": 3, "cart": 6, "order": 9}
     kw, plf, fci, sci, bid = set(), set(), set(), set(), set()
@@ -18,7 +21,7 @@ def score_search_data():
     # 根据搜索行为数据得到一个 用户-query-商品 的多个行为数据再选出打分最高的一条数据作为它的最终行为样本
     user_query_good_data = {}
     #for i, ele in enumerate(tqdm(text, total=len(text))):
-    with open(conf.search_log_data) as fin:
+    with open(log_data_file) as fin:
         for line in fin:
             ele = line.strip().lower().split("\t")
             if len(ele) != len(F2I): continue
@@ -69,8 +72,8 @@ def score_search_data():
             qid += 1
         except Exception as e:
             continue
-    print("write score_search_log_data: %s\ttotal data: %d" % (conf.score_search_log_data, len(sample_group)))
-    with open(conf.score_search_log_data, "w", encoding="utf8") as fin:
+    print("total data: %d" % (len(sample_group)))
+    with open(score_label_data, "w", encoding="utf8") as fin:
         fin.write("\n".join(sample_group))
 
 def encode_kw(query, query_dict):
@@ -137,11 +140,10 @@ def price_contain(price, price_region):
     res[index] = 1
     return res
 
-def label_data():
-    out_path = conf.xgboost_rank_data_path
-    if not os.path.exists(out_path): os.mkdir(out_path)
+def label_data(score_label_data, rank_data_file):
+    print("score_label_data file: %s\trank_data file: %s" % (score_label_data, rank_data_file))
     querys = json.load(open(conf.querys))
-    sds = [line.strip().split("\t") for line in open(conf.score_search_log_data, encoding='utf8').readlines()]
+    sds = [line.strip().split("\t") for line in open(score_label_data, encoding='utf8').readlines()]
     f2i = {e: i for i, e in enumerate(sds[0])}
     i2f = {i: e for i, e in enumerate(sds[0])}
     res = []; flag = True; fidindex = 0; fmap = []; fea_num = 0
@@ -206,6 +208,14 @@ def label_data():
         con_fea = [('连续的编码' + str(i), [continue_val[i]], continue_good_features[i], 1) for i, e in enumerate(continue_val)]
         features.extend(con_fea)
         feature_vector = []
+        # 产生特征编码用于神经网络模型
+        id2emb = {"query_emb_len": len(kw_encode), "query_number": len(querys), "continue_fea_num": len(con_fea)}
+        fea_index, emb_index = len(kw_encode), len(querys)
+        for fea in features[1:]:
+            for i, e in enumerate(fea[1]):
+                id2emb[fea_index + 1] = emb_index
+                fea_index += 1; emb_index += 1
+
         for fid in features:
             feature_vector.extend(fid[1])
             if flag:        # 写入feature map用于调试
@@ -214,44 +224,24 @@ def label_data():
                     fidindex += 1
         flag = False; fea_num = len(feature_vector)
         #line_feature = [line[1], line[2]] + [str(i+1) + ":" + str(e) for i, e in enumerate(feature_vector)]
+        a, aa = feature_vector[: -len(con_fea)], feature_vector[-len(con_fea):]
         line_feature = [line[1], line[2]] + [str(i + 1) + ":" + str(e) for i, e in enumerate(feature_vector) if e != 0]
-        res.append(" ".join(line_feature))
+        fea_dis = [line[1], line[2]] + [str(i + 1) + ":" + str(e) for i, e in enumerate(feature_vector[: -len(con_fea)]) if e != 0]
+        fea_con = [str(len(feature_vector) - len(con_fea) + i + 1) + ":" + str(e) for i, e in enumerate(feature_vector[-len(con_fea):])]
+        res.append(" ".join(fea_dis + fea_con))
+        id2emb['fea_dim'] = len(fea_dis) + len(fea_con) - 2
     #random.shuffle(res)
     print("feature vector length: %d" % (fea_num))
-    with open(out_path + "train.txt", "w", encoding="utf8") as fin:
+    json.dump(id2emb, open(conf.emb_data, "w", encoding="utf8"), indent=2)
+    with open(rank_data_file + "train.txt", "w", encoding="utf8") as fin:
         fin.write("\n".join(res[:int(len(res) * 0.8)]))
-    with open(out_path + "test.txt", "w", encoding="utf8") as fin:
+    with open(rank_data_file + "test.txt", "w", encoding="utf8") as fin:
         fin.write("\n".join(res[int(len(res) * 0.8):int(len(res) * 0.9)]))
-    with open(out_path + "valid.txt", "w", encoding="utf8") as fin:
+    with open(rank_data_file + "valid.txt", "w", encoding="utf8") as fin:
         fin.write("\n".join(res[int(len(res) * 0.9):]))
-    with open(out_path + "feature.fmap", "w", encoding="utf8") as fin:
+    with open(rank_data_file + "feature.fmap", "w", encoding="utf8") as fin:
         fin.write("\n".join(fmap))
 
-def get_valid_user_query_good_ids():
-    """
-    select * from tmp.tmp_top_search_result where buyer_id='90115146' and key_words='rolex' and goods_id='14056244' and click='impression';
-    """
-    user_query_good, res = {}, {}
-    text = [line.strip().lower().split("\t") for line in open(conf.score_search_log_data, encoding="utf8").readlines()[:100]]
-    f2i = {e: i for i, e in enumerate(text[0])}
-    for line in text[1:]:
-        sbi, skw, gid = line[f2i['s-buyer_id']], line[f2i['s-key_words']], line[f2i['g-goods_id']]
-        _key_ = "-".join([sbi, skw, gid])
-        user_query_good[_key_] = 1
-    with open("search_log_data/zn_search_data_1000000.txt") as fin:
-        for line in fin:
-            line_seg = line.strip().split("\t")
-            sb, sk, gg, sc = line_seg[F2I['s-buyer_id']], line_seg[F2I['s-key_words']], line_seg[F2I['g-goods_id']], line_seg[F2I['s-click']]
-            _k = "-".join([sb, sk, gg])
-            if _k not in user_query_good and sc != "impression" and _k in res: continue
-            res[_k] = line
-            a=1
-    with open("search_log_data/impression_data.txt", "w", encoding="utf8") as fin:
-        fin.write("".join(list(res.values())))
-    pass
-
 if __name__ == "__main__":
-    #get_valid_user_query_good_ids(); exit()
-    #score_search_data()     # 读取搜索日志信息得到打分的标注文件
-    label_data()            # 解析打分的标注文件得到 .train .test .valid 文件
-    pass
+    #score_search_data(conf.search_log_data, conf.score_label_data)
+    label_data(conf.score_label_data, conf.rank_data_file)

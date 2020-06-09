@@ -382,7 +382,7 @@ def two_stream_rel_attn(h, g, r, mems, r_w_bias, r_r_bias, seg_mat, r_s_bias,
     return output_h, output_g
 
 
-def transformer_xl(inp_k, n_token, n_layer, d_model, n_head,
+def transformer_xl(inp_k, n_token, n_layer, d_model, n_head, inp_val,
                 d_head, d_inner, dropout, dropatt, attn_type,
                 bi_data, initializer, is_training, mem_len=None,
                 inp_q=None, mems=None,
@@ -523,7 +523,8 @@ def transformer_xl(inp_k, n_token, n_layer, d_model, n_head,
         use_tpu=use_tpu,
         dtype=tf_float,
         scope='word_embedding')
-
+    inp_val = tf.reshape(inp_val, shape=[tf.shape(inp_val)[1], tf.shape(inp_val)[0], 1])
+    word_emb_k = tf.multiply(word_emb_k, inp_val)
     if inp_q is not None:
       with tf.variable_scope('mask_emb'):
         mask_emb = tf.get_variable('mask_emb', [1, 1, d_model], dtype=tf_float)

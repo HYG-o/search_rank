@@ -21,24 +21,27 @@ class Config:
         self.over_write_vocab = True   # 是否重写vocab文件
         self.querys = os.path.join(pwd_path, "dict/querys")
         self.plf = {"android": 0, "ios": 1, "pc": 2, "mob": 3, "unk": 4}
-        self.search_log_data = "search_log_data/zn_search_data.txt"
+        self.search_log_data = "search_log_data/zn_search_data1.txt"
         self.score_search_log_data = "search_log_data/score_search_data.txt"
         self.xgboost_rank_data_path = "xgboost_rank_data/"
         self.xgb_rank_model = "xgb_rank_model/"
+        self.emb_data = "dict/emb_data.txt"
+        self.rank_data_file = "rank_data/"
+        self.score_label_data = self.rank_data_file + "score_label_data.txt"
 
 conf = Config()
 
 flags.DEFINE_integer("batch_size", default=512, help="batch size of every train step")
 flags.DEFINE_integer("train_batch_size", default=512, help="batch size of every train step")
 flags.DEFINE_float("learning_rate", default=1e-3, help="Maximum learning rate.")
-flags.DEFINE_integer("train_steps", default=1000000, help="Total number of training steps.")
+flags.DEFINE_integer("train_steps", default=100, help="Total number of training steps.")
 flags.DEFINE_integer("save_steps", default=100, help="Save the model for every save_steps. If None, not to save any model.")
 flags.DEFINE_integer("warmup_steps", default=1000, help="Number of steps for linear lr warmup.")
 flags.DEFINE_float("clip", default=1.0, help="Gradient clipping value.")
 flags.DEFINE_string("original_file", "data/jddata_1000", help="original file ex: jd or resume file")
 flags.DEFINE_string("corpus_file", "data/corpus", help="jd or resume file get train text file")
-flags.DEFINE_string("train_samples", "tensorflow_rank_data/train.txt", help="train data file")
-flags.DEFINE_string("valid_samples", "tensorflow_rank_data/valid.txt", help="valid data file")
+flags.DEFINE_string("train_samples", "rank_data/train.txt", help="train data file")
+flags.DEFINE_string("valid_samples", "rank_data/valid.txt", help="valid data file")
 flags.DEFINE_bool("use_tpu", False, help="whether to use TPUs")
 flags.DEFINE_string("master", default=None, help="master")
 flags.DEFINE_integer("num_core_per_host", default=1, help="8 for TPU v2 and v3-8, 16 for larger TPU v3 pod. In the context of GPU training, it refers to the number of GPUs used.")

@@ -1,10 +1,11 @@
 from config import FLAGS
 from tqdm import tqdm
 import numpy as np
+from utils import load_data
 
 def search_log_data2label_data():
     pass
-
+'''
 def load_data(file_name):
     print('load file: %s' % (file_name))
     feature, label, qid = [], [], []
@@ -15,9 +16,9 @@ def load_data(file_name):
         qid.append(int(line[1].split(":")[1]))
     res = {'feature': np.array(feature), 'label': np.array(label), 'qid': np.array(qid)}
     return res
-
-def gen_train_samples(file_name):
-    samples = load_data(file_name)
+'''
+def gen_train_samples(file_name, emb_data):
+    samples = load_data(file_name, emb_data)
     return samples
 
 def gen_train_input_fn(file_name):

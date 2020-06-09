@@ -12,18 +12,31 @@ aws s3 cp zn_search_data.txt s3://vomkt-emr-rec/zn/data/
 """
 search_log_fields = ['collector_tstamp','birthday','buyer_id','key_words','click', 'absolute_position', 'gender', 'platform',  \
                      'first_cat_id','second_cat_id','brand_id','region_id']
-good_fields = ['goods_id','brand_id','clicks','impressions','sales_order','users','impression_users','payed_user_num','gmv','ctr','gcr','cr','click_cr', \
-'grr','sor','lgrr','search_click','sales_order_m','gender','search_score','score','rate','gr','cart_uv','cart_pv','cart_rate','shop_price','show_price',]
-FIELDS = ['s-' + e for e in search_log_fields] + ['g-' + e for e in good_fields]
+buyer_fields = ['age_range','country','first_cat_prefer_1w','second_cat_prefer_1w','second_cat_max_click_1m', \
+            'second_cat_max_collect_1m','second_cat_max_cart_1m','second_cat_max_order_1m','brand_prefer_1w','brand_prefer_his', \
+            'brand_max_click_1m', 'brand_max_collect_1m','brand_max_cart_1m','brand_max_order_1m','price_prefer_1w']
+good_fields = ['goods_id','brand_id','clicks','impressions','sales_order','users','impression_users','payed_user_num','gmv', \
+               'ctr','gcr','cr','click_cr', 'search_click','sales_order_m','gender','search_score','cart_uv','cart_pv', \
+               'shop_price','show_price','cart_rate']
+
+FIELDS = ['s-' + e for e in search_log_fields] + ['b-' + e for e in buyer_fields] + ['g-' + e for e in good_fields]
 F2I = {e: i for i, e in enumerate(FIELDS)}
 I2F = {i: e for i, e in enumerate(FIELDS)}
 
 def get_hive_join_table_file(num=10):
-    fields = ",".join(["t1." + str(e) for e in search_log_fields] + ["t2." + str(e) for e in good_fields])
-    sql_cmd = "select " + fields + " from tmp.tmp_top_search_result as t1 join ads.ads_goods_id_behave as t2 on t1.goods_id=t2.goods_id limit " + str(num) + ";"
+    fields = ",".join(["t1." + str(e) for e in search_log_fields] + ["t2." + str(e) for e in buyer_fields] + ["t3." + str(e) for e in good_fields])
+    sql_cmd = "select " + fields + \
+" from tmp.tmp_top_search_result as t1 inner join dws.dws_buyer_portrait as t2 on t1.click!='impression' and t1.buyer_id=t2.buyer_id and t2.pt='2020-06-07' \
+inner join ads.ads_goods_id_behave as t3 on t1.goods_id=t3.goods_id limit " + str(num) + ";"         # and t1.click=='impression'
     print(sql_cmd)
     with open("hive_join_table.sh", "w", encoding="utf8") as fin:
         fin.write(sql_cmd)
+
+"""
+select t1.key_words,t2.datasource,t3.goods_id from
+tmp.tmp_top_search_result as t1 left join dws.dws_buyer_portrait as t2 on t1.buyer_id=t2.buyer_id and t2.pt='2020-06-02'
+left join ads.ads_goods_id_behave as t3 on t1.goods_id=t3.goods_id limit 1;
+"""
 
 if __name__ == "__main__":
     get_hive_join_table_file()

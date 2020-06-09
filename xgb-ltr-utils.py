@@ -11,7 +11,7 @@ from utils import cal_ndcg
 from tqdm import tqdm
 from xgb_utils import parse_xgb_dict, predict_proba
 
-DATA_PATH, TASK = conf.xgboost_rank_data_path, "search_rank"
+DATA_PATH, TASK = conf.rank_data_file, "search_rank"
 #DATA_PATH, TASK = "D:/python projects/my-project-master/queryweight/get_jdcv_data/", "query_weight"       # TEST
 #DATA_PATH, TASK = "MQ2008/Fold1/", "MQ"       # TEST
 #DATA_PATH, TASK = "tmp/", "MQ"       # TEST
@@ -130,7 +130,7 @@ class xgbLtr:
         score = self.xgb_model.predict(input)[0]
         return score
 
-    def test(self, fea_num=30, topk=1, path=conf.xgboost_rank_data_path + "valid.txt"):
+    def test(self, fea_num=24, topk=1, path=conf.xgboost_rank_data_path + "valid.txt"):
         xgb_dict = parse_xgb_dict(conf.xgb_rank_model + self.model_name + ".txt")
         def cal_score():
             pass
@@ -164,6 +164,7 @@ class xgbLtr:
             dcg, idcg, ndcg = cal_ndcg(label_list, topk)
             if len(set(label_list)) <= 1: continue
             ndcgs.append(ndcg)   #[i] = ndcg
+            print([(round(k, 3), v) for k, v in sorted_score_label], round(ndcg, 3))
         ndcgs_mean = np.mean(np.array(ndcgs))   #np.mean(ndcgs)
         print("topk: %d\tndcgs mean: %.3f" % (topk, ndcgs_mean))
         pass
@@ -173,7 +174,7 @@ if __name__ == "__main__":
     f1 = "3 qid:238470 1:780 2:148 3:148 4:148 5:148 7:1 10:1 17:1 19:39.1 20:0.027 21:0.003 22:0.002 23:0.028 25:0.764 27:1.425 28:0.028 29:55.07 30:0.003"
     f2 = "1 qid:238470 1:780 2:148 3:148 4:148 5:148 7:1 10:1 17:1 19:108.79 20:0.023 21:0.01 22:0.001 23:0.028 24:0.042 25:0.907 27:1.703 28:0.044 29:43.171 30:0.003"
     xgb_ltr = xgbLtr()  #; v1=xgb_ltr.predict(f1); v2=xgb_ltr.predict(f2) #; xgb_ltr.plotXgboostTree()
-    xgb_ltr.test(topk=10)  ;   exit()
+    xgb_ltr.test(fea_num=66, topk=10)  ;   exit()
     xgb_ltr.load_data()
     xgb_ltr.train()
     pass

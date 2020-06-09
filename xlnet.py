@@ -151,7 +151,7 @@ class RunConfig(object):
 class XLNetModel(object):
   """A wrapper of the XLNet model used during both pretraining and finetuning."""
 
-  def __init__(self, xlnet_config, run_config, input_ids, seg_ids, input_mask,
+  def __init__(self, xlnet_config, run_config, input_ids, input_vals, seg_ids, input_mask,
                mems=None, perm_mask=None, target_mapping=None, inp_q=None,
                **kwargs):
     """
@@ -208,7 +208,7 @@ class XLNetModel(object):
     )
 
     input_args = dict(
-        inp_k=input_ids,
+        inp_k=input_ids, inp_val=input_vals,
         seg_id=seg_ids,
         input_mask=input_mask,
         mems=mems,

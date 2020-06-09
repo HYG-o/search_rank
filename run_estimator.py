@@ -1,11 +1,12 @@
-from config import SEQ_LEN, FLAGS
+from config import SEQ_LEN, FLAGS, conf
 import tensorflow as tf
 from embedding import get_score
 from data_utils import gen_train_samples, gen_train_input_fn
 import model_utils, sys
-from utils import load_data, calndcg
+from utils import load_data, calndcg, cal_ndcg
 import numpy as np
 from tqdm import tqdm
+import json
 
 # Define the model function (following TF Estimator Template)
 def model_fn(features, labels, mode, params):
@@ -14,7 +15,8 @@ def model_fn(features, labels, mode, params):
     # need to create 2 distinct computation graphs that still share the same weights.
     is_training = (mode == tf.estimator.ModeKeys.TRAIN)
     # get score of input
-    score, _ = get_score(features['feature'], is_training)      # 神经网络设计模块
+    features['feature_vec'] = tf.cast(features['feature_vec'], tf.float32)
+    score, _ = get_score(features['feature_emb'], features['feature_vec'], is_training)      # 神经网络设计模块
     # TF Estimators requires to return a EstimatorSpec, that specify
     # the different ops for training, evaluating, predicting...
     if mode == tf.estimator.ModeKeys.TRAIN:
@@ -31,7 +33,7 @@ def model_fn(features, labels, mode, params):
         mask1 = tf.equal(qid - tf.transpose(qid), 0)
         mask1 = tf.cast(mask1, tf.float32)
         # exclude the pair of sample and itself
-        n = tf.shape(features['feature'])[0]
+        n = tf.shape(features['feature_emb'])[0]
         mask2 = tf.ones([n, n]) - tf.diag(tf.ones([n]))
         mask = mask1 * mask2
         num_pairs = tf.reduce_sum(mask)
@@ -53,48 +55,60 @@ def run():
     # 设置日志的打印级别：把日志设置为INFO级别
     tf.logging.set_verbosity(tf.logging.INFO)
     # 得到训练数据
-    train_data = gen_train_samples(FLAGS.train_samples)
+    emb_data = json.load(open(conf.emb_data))
+    train_data = gen_train_samples(FLAGS.train_samples, emb_data)
     # 运行参数配置
     run_config = model_utils.configure_tpu(FLAGS)
     # Build the Estimator
-    model = tf.estimator.Estimator(model_fn, params={"seq_len": SEQ_LEN}, config=run_config)
+    model = tf.estimator.Estimator(model_fn, params={"seq_len": emb_data['fea_dim']}, config=run_config)
     # Define the input function for training
     input_fn = tf.estimator.inputs.numpy_input_fn(
-        x={'feature': train_data['feature'], 'label': train_data['label'], 'qid': train_data['qid']},
+        x={'feature_emb': train_data['feature_emb'], 'feature_vec': train_data['feature_vec'], 'label': train_data['label'], 'qid': train_data['qid']},
         batch_size=FLAGS.batch_size, num_epochs=None, shuffle=True)
     # Define the input function based on tf.record file
 #    input_fn = gen_train_input_fn(FLAGS.train_samples)
     # Train the Model
     model.train(input_fn, steps=FLAGS.train_steps)
     # save model
-    feature_spec = {'feature': tf.placeholder(dtype=tf.int32, shape=[None, SEQ_LEN], name='input_ids')}
+    feature_spec = {'feature_emb': tf.placeholder(dtype=tf.int32, shape=[None, emb_data['fea_dim']], name='input_ids'), \
+                    'feature_vec': tf.placeholder(dtype=tf.float32, shape=[None, emb_data['fea_dim']], name='input_vals')}
     serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn(feature_spec)
     model.export_savedmodel(FLAGS.serving_model_dir, serving_input_receiver_fn)
 
 class seachRank:
     def __init__(self, ckpt_num=0):
         tf.logging.set_verbosity(tf.logging.INFO)
+        self.emb_data = json.load(open(conf.emb_data))
         self.ckpt_path = FLAGS.model_dir + "/model.ckpt-" + str(ckpt_num)
         self.sess = tf.Session()
-        self.feature = tf.placeholder(tf.int32, [None, SEQ_LEN], name='input_seq_feature')  # [batch_size, SEQ_LEN]
+        self.feature_emb = tf.placeholder(tf.int32, [None, self.emb_data['fea_dim']], name='input_ids')  # [batch_size, SEQ_LEN]
+        self.feature_vec = tf.placeholder(tf.float32, [None, self.emb_data['fea_dim']], name='input_vals')  # [batch_size, SEQ_LEN]
         # get score of input
-        self.score, _ = get_score(self.feature, False)  # 神经网络设计模块
+        self.score, _ = get_score(self.feature_emb, self.feature_vec, False)  # 神经网络设计模块
         tf.train.Saver().restore(self.sess, self.ckpt_path)
 
-    def test(self, test_file="tensorflow_rank_data/valid.txt"):
-        X = load_data(test_file)
+    def test(self, topk=10, test_file="rank_data/valid.txt"):
+        X = load_data(test_file, self.emb_data)
         print('evaluate model...')
         qid_unique = np.unique(X["qid"])
         n = len(qid_unique)
-        ndcgs = np.zeros(n)
+        ndcgs = [] #np.zeros(n)
         # 计算每一个组的 ndcg 值
         for e, qid in enumerate(tqdm(qid_unique, total=len(qid_unique))):
             ind = np.where(X["qid"] == qid)[0]
-            feed_dict = {self.feature: X["feature"][ind]}
+            label = list(X["label"][ind])
+            feed_dict = {self.feature_emb: X["feature_emb"][ind], self.feature_vec: X["feature_vec"][ind]}
             # fetch = self.sess.run(self.debug_info, feed_dict=feed_dict)
             fetch = self.sess.run({'score': self.score}, feed_dict=feed_dict)
-            score = fetch['score'].flatten()
-            ndcgs[e] = calndcg(score, X["label"][ind].flatten(), 10)
+            score = list(fetch['score'].flatten())
+            score_label = [(score[i], label[i]) for i in range(len(label))]
+            sorted_score_label = sorted(score_label, key=lambda d: d[0], reverse=True)
+            label_list = [label for score, label in sorted_score_label]
+            dcg, idcg, ndcg = cal_ndcg(label_list, topk)
+            if len(set(label_list)) <= 1: continue
+            ndcgs.append(ndcg)  # [i] = ndcg
+            print([(round(k, 3), v) for k, v in sorted_score_label], round(ndcg, 3))
+            #ndcgs[e] = calndcg(score, X["label"][ind].flatten(), 10)
         ndcgs_mean = np.mean(ndcgs)
         print('test file: %s\tndcg mean: %.3f' % (test_file, ndcgs_mean))
         return ndcgs_mean

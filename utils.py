@@ -12,15 +12,27 @@ def gen_test_train_data():
     gen_data("MQ2008/Fold1/test.txt", "tmp/test.txt")
     gen_data("MQ2008/Fold1/valid.txt", "tmp/valid.txt")
 
-def load_data(file_name):
+def load_data(file_name, emb_data):
     print('load file: %s' % (file_name))
-    feature, label, qid = [], [], []
+    feature_emb, feature_vec, label, qid = [], [], [], []
     text = [line.strip().split() for line in open(file_name).readlines()]
     for line in tqdm(text, total=len(text)):
-        feature.append([int(e.split(":")[1]) for e in line[2:]])
+        emb, vec = [], []
         label.append(int(line[0]))
         qid.append(int(line[1].split(":")[1]))
-    res = {'feature': np.array(feature), 'label': np.array(label), 'qid': np.array(qid)}
+        # query embed
+        for e in line[2: 2 + emb_data['query_emb_len']]:
+            emb.append(int(e.split(":")[1]))
+            vec.append(1.0)
+        # 其它特征编码
+        a=line[2 + emb_data['query_emb_len']: -emb_data['continue_fea_num']]
+        for e in line[2 + emb_data['query_emb_len']:]:
+            k, v = e.split(":")
+            v = float(v)
+            emb.append(emb_data[k])
+            vec.append(v)
+        feature_emb.append(emb); feature_vec.append(vec)
+    res = {'feature_emb': np.array(feature_emb), 'feature_vec': np.array(feature_vec), 'label': np.array(label), 'qid': np.array(qid)}
     return res
 
 def get_batch_index(seq, step):
